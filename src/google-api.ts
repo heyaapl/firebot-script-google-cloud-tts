@@ -1,24 +1,26 @@
 import axios from "axios";
+import { EffectModel } from "./types";
 
 interface SynthesizeTextResponse {
   audioContent: string;
 }
 
-export async function getTTSAudioContent(text: string): Promise<string | null> {
-  const googleApiKey = "AIzaSyCWbRF5-5eORTdoi0rndoe3ExBjzJRseKU";
-  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleApiKey}`;
+export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
+  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
 
   const response = await axios.post<SynthesizeTextResponse>(url, {
     input: {
-      text: text,
+      text: effect.text,
     },
     voice: {
-      languageCode: "en-US",
-      name: "en-US-Wavenet-C",
-      ssmlGender: "FEMALE",
+      languageCode: effect.voiceName.substring(0,5),
+      name: effect.voiceName,
+      ssmlGender: effect.voiceGender,
     },
     audioConfig: {
       audioEncoding: "MP3",
+      pitch: effect.pitch,
+      speakingRate: effect.speakingRate
     },
   });
 

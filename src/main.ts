@@ -2,7 +2,9 @@ import { Firebot } from "firebot-custom-scripts-types";
 import { buildGoogleTtsEffectType } from "./google-tts-effect";
 import { initLogger } from "./logger";
 
-interface Params {}
+interface Params {
+  googleCloudAPIKey: string
+}
 
 const script: Firebot.CustomScript<Params> = {
   getScriptManifest: () => {
@@ -16,7 +18,14 @@ const script: Firebot.CustomScript<Params> = {
     };
   },
   getDefaultParameters: () => {
-    return {};
+    return {
+      googleCloudAPIKey: {
+        type: "string",
+        description: "Google Cloud API Key",
+        secondaryDescription: "Go here to get your Google Cloud API Key: https://cloud.google.com/docs/authentication/api-keys",
+        default: ""
+      }
+    };
   },
   run: (runRequest) => {
     const { effectManager, frontendCommunicator, logger } = runRequest.modules;
@@ -24,7 +33,7 @@ const script: Firebot.CustomScript<Params> = {
     const path = (runRequest.modules as any).path;
     initLogger(logger);
     effectManager.registerEffect(
-      buildGoogleTtsEffectType(frontendCommunicator, fs, path)
+      buildGoogleTtsEffectType(frontendCommunicator, fs, path, runRequest.parameters.googleCloudAPIKey)
     );
   },
 };

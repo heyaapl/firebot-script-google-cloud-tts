@@ -4,17 +4,13 @@ import { v4 as uuid } from "uuid";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
 import { wait } from "./utils";
-
-interface EffectModel {
-  text: string;
-  volume: number;
-  audioOutputDevice: any;
-}
+import { EffectModel } from "./types";
 
 export function buildGoogleTtsEffectType(
   frontendCommunicator: ScriptModules["frontendCommunicator"],
   fs: ScriptModules["fs"],
-  path: ScriptModules["path"]
+  path: ScriptModules["path"],
+  googleCloudAPIKey: string
 ) {
   const googleTtsEffectType: Firebot.EffectType<EffectModel> = {
     definition: {
@@ -50,11 +46,50 @@ export function buildGoogleTtsEffectType(
           </div>
       </eos-container>
 
+      <eos-container header="Voice" pad-top="true">
+        <ui-select ng-model="effect.voiceName" theme="bootstrap">
+            <ui-select-match placeholder="Select or search for a voice...">{{$select.selected.name}}</ui-select-match>
+            <ui-select-choices repeat="voice.name as voice in voices" style="position:relative;">
+                <div ng-bind-html="voice.name | highlight: $select.search"></div>
+                <small class="muted"><strong>{{voice.language}}</small>
+            </ui-select-choices>
+        </ui-select>
+      </eos-container>
+      <!--
+      <eos-container header="Gender" pad-top="true">
+            <dropdown-select options="{ MALE: 'Male', FEMALE: 'Female'}" selected="effect.voiceGender"></dropdown-select>
+      </eos-container>
+      -->
+      <eos-container header="Pitch & Speed" pad-top="true">
+        <div>Pitch</div>
+        <rzslider rz-slider-model="effect.pitch" rz-slider-options="{floor: -20, ceil: 20, hideLimitLabels: true, showSelectionBar: true, step: 0.5, precision: 1}"></rzslider>
+        <div>Speed</div>
+        <rzslider rz-slider-model="effect.speakingRate" rz-slider-options="{floor: 0.25, ceil: 4, hideLimitLabels: true, showSelectionBar: true, step: 0.05, precision: 2}"></rzslider>
+      </eos-container>
+
       <eos-audio-output-device effect="effect" pad-top="true"></eos-audio-output-device>
     `,
     optionsController: ($scope) => {
       if ($scope.effect.volume == null) {
         $scope.effect.volume = 10;
+      }
+      $scope.voices = [
+        {name: "en-US-Wavenet-A", language: "English (US)"},
+        {name: "en-US-Wavenet-B", language: "English (US)"},
+        {name: "en-US-Wavenet-C", language: "English (US)"}
+      ]as Array<{name:string;language:string}>;
+
+      if ($scope.effect.voiceName == null){
+        $scope.effect.voiceName = ($scope.voices as any)[0];
+      }
+      if ($scope.effect.voiceGender == null) {
+        $scope.effect.voiceGender = "MALE";
+      }
+      if ($scope.effect.pitch == null) {
+        $scope.effect.pitch = 0;
+      }
+      if ($scope.effect.speakingRate == null) {
+        $scope.effect.speakingRate = 1;
       }
     },
     optionsValidator: (effect) => {
@@ -69,18 +104,14 @@ export function buildGoogleTtsEffectType(
 
       try {
         //  synthesize text via google tts
-        const audioContent = await getTTSAudioContent(effect.text);
-
-        logger.debug(audioContent);
+        const audioContent = await getTTSAudioContent(effect, googleCloudAPIKey);
 
         if (audioContent == null) {
           // call to google tts api failed
           return true;
         }
 
-        const filePath = path.join(process.cwd(), "tmp", `tts${uuid()}.mp3`);
-
-        logger.debug(filePath);
+        const filePath = path.join(process.cwd(), `tts${uuid()}.mp3`);
 
         // save audio content to file
         await fs.writeFile(filePath, Buffer.from(audioContent, "base64"));
@@ -108,7 +139,7 @@ export function buildGoogleTtsEffectType(
         // remove the audio file
         await fs.unlink(filePath);
       } catch (error) {
-        logger.error("ADA TTS Effect failed", error);
+        logger.error("Google Cloud TTS Effect failed", error);
       }
 
       // returning true tells the firebot effect system this effect has completed
