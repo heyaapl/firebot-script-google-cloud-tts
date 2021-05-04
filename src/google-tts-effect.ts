@@ -41,7 +41,7 @@ export function buildGoogleTtsEffectType(
       <eos-container header="Voice" pad-top="true">
         <ui-select ng-model="effect.voiceName" theme="bootstrap">
             <ui-select-match placeholder="Select or search for a voice...">{{$select.selected.name}}</ui-select-match>
-            <ui-select-choices repeat="voice.name as voice in voices" style="position:relative;">
+            <ui-select-choices repeat="voice.name as voice in voices | filter: { language: $select.search }" style="position:relative;">
                 <div ng-bind-html="voice.name | highlight: $select.search"></div>
                 <small class="muted"><strong>{{voice.language}}</small>
             </ui-select-choices>
@@ -74,34 +74,36 @@ export function buildGoogleTtsEffectType(
         $scope.effect.volume = 10;
       }
       $scope.voices = [
-        {name:"en-US-Wavenet-A", language: "English (US)"},
-        {name:"en-US-Wavenet-B", language: "English (US)"},
-        {name:"en-US-Wavenet-C", language: "English (US)"},
-        {name:"en-US-Wavenet-D", language: "English (US)"},
-        {name:"en-US-Wavenet-E", language: "English (US)"},
-        {name:"en-US-Wavenet-F", language: "English (US)"},
-        {name:"en-US-Wavenet-G", language: "English (US)"},
-        {name:"en-US-Wavenet-H", language: "English (US)"},
-        {name:"en-US-Wavenet-I", language: "English (US)"},
-        {name:"en-US-Wavenet-J", language: "English (US)"},
-        {name:"en-GB-Wavenet-A", language: "English (UK)"},
-        {name:"en-GB-Wavenet-B", language: "English (UK)"},
-        {name:"en-GB-Wavenet-C", language: "English (UK)"},
-        {name:"en-GB-Wavenet-D", language: "English (UK)"},
-        {name:"en-GB-Wavenet-F", language: "English (UK)"},
-        {name:"en-AU-Wavenet-A", language: "English (AU)"},
-        {name:"en-AU-Wavenet-B", language: "English (AU)"},
-        {name:"en-AU-Wavenet-C", language: "English (AU)"},
-        {name:"en-AU-Wavenet-D", language: "English (AU)"},
-        {name:"en-IN-Wavenet-A", language: "English (IN)"},
-        {name:"en-IN-Wavenet-B", language: "English (IN)"},
-        {name:"en-IN-Wavenet-C", language: "English (IN)"},
-        {name:"en-IN-Wavenet-D", language: "English (IN)"}
+        {name:"en-US-Wavenet-A", language: "English (US) | Male"},
+        {name:"en-US-Wavenet-B", language: "English (US) | Male"},
+        {name:"en-US-Wavenet-C", language: "English (US) | Female"},
+        {name:"en-US-Wavenet-D", language: "English (US) | Male"},
+        {name:"en-US-Wavenet-E", language: "English (US) | Female"},
+        {name:"en-US-Wavenet-F", language: "English (US) | Female"},
+        {name:"en-US-Wavenet-G", language: "English (US) | Female"},
+        {name:"en-US-Wavenet-H", language: "English (US) | Female"},
+        {name:"en-US-Wavenet-I", language: "English (US) | Male"},
+        {name:"en-US-Wavenet-J", language: "English (US) | Male"},
+        {name:"en-GB-Wavenet-A", language: "English (UK) | Female"},
+        {name:"en-GB-Wavenet-B", language: "English (UK) | Male"},
+        {name:"en-GB-Wavenet-C", language: "English (UK) | Female"},
+        {name:"en-GB-Wavenet-D", language: "English (UK) | Male"},
+        {name:"en-GB-Wavenet-F", language: "English (UK) | Female"},
+        {name:"en-AU-Wavenet-A", language: "English (AU) | Female"},
+        {name:"en-AU-Wavenet-B", language: "English (AU) | Male"},
+        {name:"en-AU-Wavenet-C", language: "English (AU) | Female"},
+        {name:"en-AU-Wavenet-D", language: "English (AU) | Male"},
+        {name:"en-IN-Wavenet-A", language: "English (IN) | Female"},
+        {name:"en-IN-Wavenet-B", language: "English (IN) | Male"},
+        {name:"en-IN-Wavenet-C", language: "English (IN) | Male"},
+        {name:"en-IN-Wavenet-D", language: "English (IN) | Female"}
       ]as Array<{name:string;language:string}>;
 
       if ($scope.effect.voiceName == null){
         $scope.effect.voiceName = ($scope.voices as any)[0];
       }
+      //Google Cloud TTS is not switching genders, so this has been disabled for now. Uncomment the
+      //UI HTML to enable Gendered voices once Google's API returns the approriately gendered voice.
       if ($scope.effect.voiceGender == null) {
         $scope.effect.voiceGender = "MALE";
       }
