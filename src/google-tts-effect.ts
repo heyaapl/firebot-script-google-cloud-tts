@@ -38,14 +38,6 @@ export function buildGoogleTtsEffectType(
           <textarea ng-model="effect.text" class="form-control" name="text" placeholder="Enter text" rows="4" cols="40" replace-variables menu-position="under"></textarea>
       </eos-container>
 
-      <eos-container header="Volume" pad-top="true">
-          <div class="volume-slider-wrapper">
-              <i class="fal fa-volume-down volume-low"></i>
-                <rzslider rz-slider-model="effect.volume" rz-slider-options="{floor: 1, ceil: 10, hideLimitLabels: true, showSelectionBar: true}"></rzslider>
-              <i class="fal fa-volume-up volume-high"></i>
-          </div>
-      </eos-container>
-
       <eos-container header="Voice" pad-top="true">
         <ui-select ng-model="effect.voiceName" theme="bootstrap">
             <ui-select-match placeholder="Select or search for a voice...">{{$select.selected.name}}</ui-select-match>
@@ -67,6 +59,14 @@ export function buildGoogleTtsEffectType(
         <rzslider rz-slider-model="effect.speakingRate" rz-slider-options="{floor: 0.25, ceil: 4, hideLimitLabels: true, showSelectionBar: true, step: 0.05, precision: 2}"></rzslider>
       </eos-container>
 
+      <eos-container header="Volume" pad-top="true">
+          <div class="volume-slider-wrapper">
+              <i class="fal fa-volume-down volume-low"></i>
+                <rzslider rz-slider-model="effect.volume" rz-slider-options="{floor: 1, ceil: 10, hideLimitLabels: true, showSelectionBar: true}"></rzslider>
+              <i class="fal fa-volume-up volume-high"></i>
+          </div>
+      </eos-container>
+
       <eos-audio-output-device effect="effect" pad-top="true"></eos-audio-output-device>
     `,
     optionsController: ($scope) => {
@@ -74,9 +74,29 @@ export function buildGoogleTtsEffectType(
         $scope.effect.volume = 10;
       }
       $scope.voices = [
-        {name: "en-US-Wavenet-A", language: "English (US)"},
-        {name: "en-US-Wavenet-B", language: "English (US)"},
-        {name: "en-US-Wavenet-C", language: "English (US)"}
+        {name:"en-US-Wavenet-A", language: "English (US)"},
+        {name:"en-US-Wavenet-B", language: "English (US)"},
+        {name:"en-US-Wavenet-C", language: "English (US)"},
+        {name:"en-US-Wavenet-D", language: "English (US)"},
+        {name:"en-US-Wavenet-E", language: "English (US)"},
+        {name:"en-US-Wavenet-F", language: "English (US)"},
+        {name:"en-US-Wavenet-G", language: "English (US)"},
+        {name:"en-US-Wavenet-H", language: "English (US)"},
+        {name:"en-US-Wavenet-I", language: "English (US)"},
+        {name:"en-US-Wavenet-J", language: "English (US)"},
+        {name:"en-GB-Wavenet-A", language: "English (UK)"},
+        {name:"en-GB-Wavenet-B", language: "English (UK)"},
+        {name:"en-GB-Wavenet-C", language: "English (UK)"},
+        {name:"en-GB-Wavenet-D", language: "English (UK)"},
+        {name:"en-GB-Wavenet-F", language: "English (UK)"},
+        {name:"en-AU-Wavenet-A", language: "English (AU)"},
+        {name:"en-AU-Wavenet-B", language: "English (AU)"},
+        {name:"en-AU-Wavenet-C", language: "English (AU)"},
+        {name:"en-AU-Wavenet-D", language: "English (AU)"},
+        {name:"en-IN-Wavenet-A", language: "English (IN)"},
+        {name:"en-IN-Wavenet-B", language: "English (IN)"},
+        {name:"en-IN-Wavenet-C", language: "English (IN)"},
+        {name:"en-IN-Wavenet-D", language: "English (IN)"}
       ]as Array<{name:string;language:string}>;
 
       if ($scope.effect.voiceName == null){

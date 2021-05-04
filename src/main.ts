@@ -9,8 +9,8 @@ interface Params {
 const script: Firebot.CustomScript<Params> = {
   getScriptManifest: () => {
     return {
-      name: "Google TTS Effect",
-      description: "Adds the Google TTS effect",
+      name: "Google Cloud TTS Effect",
+      description: "Adds the Google Cloud TTS effect",
       author: "heyaapl",
       version: "1.0",
       firebotVersion: "5",
@@ -22,7 +22,7 @@ const script: Firebot.CustomScript<Params> = {
       googleCloudAPIKey: {
         type: "string",
         description: "Google Cloud API Key",
-        secondaryDescription: "Go here to get your Google Cloud API Key: https://cloud.google.com/docs/authentication/api-keys",
+        secondaryDescription: "You must have a Google Cloud API Key for this to work. Go here to get your Google Cloud API Key: https://cloud.google.com/docs/authentication/api-keys#creating_an_api_key",
         default: ""
       }
     };
