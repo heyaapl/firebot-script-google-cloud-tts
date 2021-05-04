@@ -1,32 +1,31 @@
 import { Firebot } from "firebot-custom-scripts-types";
+import { buildGoogleTtsEffectType } from "./google-tts-effect";
+import { initLogger } from "./logger";
 
-interface Params {
-  message: string;
-}
+interface Params {}
 
 const script: Firebot.CustomScript<Params> = {
   getScriptManifest: () => {
     return {
-      name: "Starter Custom Script",
-      description: "A starter custom script for build",
-      author: "SomeDev",
+      name: "Google TTS Effect",
+      description: "Adds the Google TTS effect",
+      author: "heyaapl",
       version: "1.0",
       firebotVersion: "5",
+      startupOnly: true,
     };
   },
   getDefaultParameters: () => {
-    return {
-      message: {
-        type: "string",
-        default: "Hello World!",
-        description: "Message",
-        secondaryDescription: "Enter a message here",
-      },
-    };
+    return {};
   },
   run: (runRequest) => {
-    const { logger } = runRequest.modules;
-    logger.info(runRequest.parameters.message);
+    const { effectManager, frontendCommunicator, logger } = runRequest.modules;
+    const fs = (runRequest.modules as any).fs;
+    const path = (runRequest.modules as any).path;
+    initLogger(logger);
+    effectManager.registerEffect(
+      buildGoogleTtsEffectType(frontendCommunicator, fs, path)
+    );
   },
 };
 
