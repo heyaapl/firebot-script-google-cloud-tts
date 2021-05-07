@@ -8,6 +8,8 @@ Looking to recreate the voice of A.D.A (Artificial Directory and Assistant) from
 ## Prerequisites
 You must have a Google Cloud Account, and a [Google Cloud API Key](https://cloud.google.com/docs/authentication/api-keys#creating_an_api_key) to use this script. Technically this is a paid service, however, each month Google will give you 1,000,000 free characters of TTS. If you exceed that, they charge USD $16 for every additional bucket of 1,000,000 characters.
 
+In addition to obtaining your API Key, you must also activate and enable Google Cloud Text-to-Speech by following this [this link](https://console.cloud.google.com/apis/library/texttospeech.googleapis.com).
+
 The API Key may look something like: `AITEwL55bWmT-zZeuiWF8o9EpruWtue7QUhMy05`
 
 Make sure you have your API Key handy, as you'll need it once you install the Script in Firebot.
