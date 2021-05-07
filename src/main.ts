@@ -12,7 +12,7 @@ const script: Firebot.CustomScript<Params> = {
       name: "Google Cloud TTS Effect",
       description: "Adds the Google Cloud TTS effect",
       author: "heyaapl",
-      version: "1.0",
+      version: "1.1",
       firebotVersion: "5",
       startupOnly: true,
     };
@@ -21,8 +21,8 @@ const script: Firebot.CustomScript<Params> = {
     return {
       googleCloudAPIKey: {
         type: "string",
-        description: "Google Cloud API Key",
-        secondaryDescription: "You must have a Google Cloud API Key for this to work. Go here to get your Google Cloud API Key: https://cloud.google.com/docs/authentication/api-keys#creating_an_api_key",
+        description: "Google Cloud API Key (Restart Firebot After Setting)",
+        secondaryDescription: "You must have a Google Cloud API Key & Cloud Text-to-Speech Enabled for this to work. Follow the steps here to get started: https://github.com/heyaapl/firebot-script-google-cloud-tts#readme",
         default: ""
       }
     };
