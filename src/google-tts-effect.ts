@@ -20,18 +20,6 @@ export function buildGoogleTtsEffectType(
       icon: "fad fa-microphone-alt",
       categories: ["fun"],
       dependencies: [],
-      triggers: {
-        command: true,
-        custom_script: true,
-        startup_script: true,
-        api: true,
-        event: true,
-        hotkey: true,
-        timer: true,
-        counter: true,
-        preset: true,
-        manual: true,
-      },
     },
     optionsTemplate: `
       <eos-container header="Text">
