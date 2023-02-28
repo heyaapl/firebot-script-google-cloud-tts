@@ -84,7 +84,8 @@ export function buildGoogleTtsEffectType(
         {name:"en-IN-Wavenet-A", language: "English (IN) | Female"},
         {name:"en-IN-Wavenet-B", language: "English (IN) | Male"},
         {name:"en-IN-Wavenet-C", language: "English (IN) | Male"},
-        {name:"en-IN-Wavenet-D", language: "English (IN) | Female"}
+        {name:"en-IN-Wavenet-D", language: "English (IN) | Female"},
+        {name:"hu-HU-Wavenet-A", language: "Hungarian (HU) | Female"}
       ]as Array<{name:string;language:string}>;
 
       if ($scope.effect.voiceName == null){
