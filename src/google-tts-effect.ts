@@ -2,7 +2,7 @@ import { Firebot, ScriptModules } from "@crowbartools/firebot-custom-scripts-typ
 import { v4 as uuid } from "uuid";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
-import { wait } from "./utils";
+import { tmpDir, wait } from "./utils";
 import { EffectModel } from "./types";
 
 export function buildGoogleTtsEffectType(
@@ -120,7 +120,11 @@ export function buildGoogleTtsEffectType(
           return true;
         }
 
-        const filePath = path.join(process.cwd(), `tts${uuid()}.mp3`);
+        if (!fs.existsSync(tmpDir)) {
+          fs.mkdirSync(tmpDir);
+        }
+
+        const filePath = path.join(tmpDir, `tts${uuid()}.mp3`);
 
         // save audio content to file
         await new Promise(resolve => fs.writeFile(filePath, Buffer.from(audioContent, "base64"), resolve));

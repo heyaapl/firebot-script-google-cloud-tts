@@ -1,6 +1,7 @@
 import { Firebot } from "@crowbartools/firebot-custom-scripts-types";
 import { buildGoogleTtsEffectType } from "./google-tts-effect";
 import { initLogger } from "./logger";
+import { setTmpDir } from "./utils";
 
 interface Params {
   googleCloudAPIKey: string;
@@ -31,7 +32,7 @@ const script: Firebot.CustomScript<Params> = {
   },
   run: (runRequest) => {
     const { modules, parameters } = runRequest;
-    const { effectManager, logger } = modules;
+    const { effectManager, logger, path } = modules;
 
     logger.info(parameters?.testMessage ?? "Google Cloud TTS plugin is starting up");
     // Not a fan of divergent testing, but I don't want to fully mockup runRequest
@@ -39,6 +40,8 @@ const script: Firebot.CustomScript<Params> = {
       return;
     }
 
+    // `%appdata%/Firebot/v5/profiles/{profile_name}/scripts` -> `%appdata%/Firebot/tmp/google-tts`
+    setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
     initLogger(logger);
     effectManager.registerEffect(
       buildGoogleTtsEffectType(modules, parameters.googleCloudAPIKey)
