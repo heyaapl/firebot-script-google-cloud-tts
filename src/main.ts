@@ -1,6 +1,7 @@
 import { Firebot } from "firebot-custom-scripts-types";
 import { buildGoogleTtsEffectType } from "./google-tts-effect";
 import { initLogger } from "./logger";
+import { setTmpDir } from "./utils";
 
 interface Params {
   googleCloudAPIKey: string
@@ -29,8 +30,9 @@ const script: Firebot.CustomScript<Params> = {
   },
   run: (runRequest) => {
     const { effectManager, frontendCommunicator, logger } = runRequest.modules;
-    const fs = (runRequest.modules as any).fs;
-    const path = (runRequest.modules as any).path;
+    const fs = runRequest.modules.fs;
+    const path = runRequest.modules.path;
+    setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
     initLogger(logger);
     effectManager.registerEffect(
       buildGoogleTtsEffectType(frontendCommunicator, fs, path, runRequest.parameters.googleCloudAPIKey)
