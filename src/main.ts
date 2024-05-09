@@ -1,4 +1,4 @@
-import { Firebot } from "firebot-custom-scripts-types";
+import { Firebot } from "@crowbartools/firebot-custom-scripts-types";
 import { buildGoogleTtsEffectType } from "./google-tts-effect";
 import { initLogger } from "./logger";
 import { setTmpDir } from "./utils";
