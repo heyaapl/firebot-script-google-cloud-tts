@@ -1,4 +1,4 @@
-import { ScriptModules } from "firebot-custom-scripts-types";
+import { ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
 export let logger: ScriptModules["logger"] = {
   debug: () => {},
   info: () => {},
