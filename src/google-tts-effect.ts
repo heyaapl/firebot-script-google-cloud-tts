@@ -1,5 +1,4 @@
-import axios from "axios";
-import { Firebot, ScriptModules } from "firebot-custom-scripts-types";
+import { Firebot, ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
 import { v4 as uuid } from "uuid";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
@@ -7,11 +6,11 @@ import { wait } from "./utils";
 import { EffectModel } from "./types";
 
 export function buildGoogleTtsEffectType(
-  frontendCommunicator: ScriptModules["frontendCommunicator"],
-  fs: ScriptModules["fs"],
-  path: ScriptModules["path"],
+  modules: ScriptModules,
   googleCloudAPIKey: string
 ) {
+  const { frontendCommunicator, fs, path } = modules;
+
   const googleTtsEffectType: Firebot.EffectType<EffectModel> = {
     definition: {
       id: "heyaapl:google-cloud-tts",
@@ -124,7 +123,7 @@ export function buildGoogleTtsEffectType(
         const filePath = path.join(process.cwd(), `tts${uuid()}.mp3`);
 
         // save audio content to file
-        await fs.writeFile(filePath, Buffer.from(audioContent, "base64"));
+        await new Promise(resolve => fs.writeFile(filePath, Buffer.from(audioContent, "base64"), resolve));
 
         // get the duration of this tts sound duration
         const soundDuration = await frontendCommunicator.fireEventAsync<number>(
@@ -147,7 +146,7 @@ export function buildGoogleTtsEffectType(
         await wait((soundDuration + 1.5) * 1000);
 
         // remove the audio file
-        await fs.unlink(filePath);
+        await new Promise(resolve => fs.unlink(filePath, resolve));
       } catch (error) {
         logger.error("Google Cloud TTS Effect failed", error);
       }

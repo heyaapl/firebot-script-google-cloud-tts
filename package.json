@@ -13,19 +13,24 @@
   "author": "ebiggz",
   "license": "GNU3",
   "devDependencies": {
-    "@types/node": "^14.14.6",
-    "@types/uuid": "^8.3.0",
-    "firebot-custom-scripts-types": "https://github.com/crowbartools/firebot-custom-scripts-types/tarball/8dbd4a5b67e01989568201351c24ccecb2ab055a",
-    "jest": "^26.6.3",
-    "terser-webpack-plugin": "^4.2.3",
-    "ts-jest": "^26.4.4",
-    "ts-loader": "^8.0.7",
-    "typescript": "^4.0.5",
-    "webpack": "^4.44.2",
-    "webpack-cli": "^4.1.0"
+    "@crowbartools/firebot-custom-scripts-types": "^5.63.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.14.0",
+    "@types/uuid": "^10.0.0",
+    "jest": "^29.7.0",
+    "terser-webpack-plugin": "^5.3.11",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.5.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "axios": "^0.21.1",
-    "uuid": "^8.3.2"
+    "uuid": "^3.3.3"
+  },
+  "volta": {
+    "node": "20.14.0",
+    "npm": "10.8.1"
   }
 }
