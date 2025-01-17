@@ -31,7 +31,8 @@ const script: Firebot.CustomScript<Params> = {
     };
   },
   run: (runRequest) => {
-    const { modules, parameters } = runRequest;
+    const { firebot, modules, parameters } = runRequest;
+    const { settings } = firebot;
     const { effectManager, logger, path } = modules;
 
     logger.info(parameters?.testMessage ?? "Google Cloud TTS plugin is starting up");
@@ -44,7 +45,7 @@ const script: Firebot.CustomScript<Params> = {
     setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
     initLogger(logger);
     effectManager.registerEffect(
-      buildGoogleTtsEffectType(modules, parameters.googleCloudAPIKey)
+      buildGoogleTtsEffectType(modules, settings, parameters.googleCloudAPIKey)
     );
   },
 };

@@ -1,15 +1,31 @@
 import { Firebot, ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
+import { FirebotSettings } from "@crowbartools/firebot-custom-scripts-types/types/settings";
 import { v4 as uuid } from "uuid";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
 import { tmpDir, wait } from "./utils";
 import { EffectModel } from "./types";
 
+interface PlaySoundData {
+  audioOutputDevice: {
+    deviceId?: string;
+    label?: string;
+  };
+  filepath: string;
+  format: string;
+  maxSoundLength: number;
+  volume: number;
+
+  overlayInstance?: string;
+  resourceToken?: string;
+};
+
 export function buildGoogleTtsEffectType(
   modules: ScriptModules,
+  settings: FirebotSettings,
   googleCloudAPIKey: string
 ) {
-  const { frontendCommunicator, fs, path } = modules;
+  const { frontendCommunicator, fs, path, resourceTokenManager } = modules;
 
   const googleTtsEffectType: Firebot.EffectType<EffectModel> = {
     definition: {
@@ -92,7 +108,7 @@ export function buildGoogleTtsEffectType(
       //Google Cloud TTS is not switching genders, so this has been disabled for now. Uncomment the
       //UI HTML to enable Gendered voices once Google's API returns the approriately gendered voice.
       if ($scope.effect.voiceGender == null) {
-        $scope.effect.voiceGender = "MALE";
+        $scope.effect.voiceGender = "SSML_VOICE_GENDER_UNSPECIFIED";
       }
       if ($scope.effect.pitch == null) {
         $scope.effect.pitch = 0;
@@ -111,53 +127,114 @@ export function buildGoogleTtsEffectType(
     onTriggerEvent: async (event) => {
       const effect = event.effect;
 
+      const effectResult = (success: boolean) => {
+        return {
+          execution: {
+            bubbleStop: !success && effect.stopOnError && effect.stopOnError.includes("bubble"),
+            stop: !success && effect.stopOnError && effect.stopOnError.includes("stop")
+          },
+          success: success
+        };
+      };
+      const removeFile = (fd: string): Promise<boolean> => {
+        return new Promise<boolean>(resolve => {
+          fs.unlink(fd, (err) => {
+            if (err) {
+              logger.warn(`Failed to remove Google TTS audio file from ${fd}:`, err.message);
+            }
+            resolve(!err);
+          });
+        });
+      };
+      const writeFile = async (fd: string, b64Data: string): Promise<boolean> => {
+        return new Promise<boolean>(resolve => {
+          if (fd && b64Data) {
+            fs.writeFile(fd, Buffer.from(b64Data, "base64"), (err) => {
+              if (err) {
+                logger.error(`Failed to write Google TTS audio to ${fd}:`, err.message ?? "no message");
+              }
+              resolve(!err);
+            });
+          } else {
+            logger.warn("Google TTS writeFile called with null parameter(s)");
+            resolve(false);
+          }
+        });
+      };
+
+      // Create the temporary folder first
       try {
-        //  synthesize text via google tts
-        const audioContent = await getTTSAudioContent(effect, googleCloudAPIKey);
-
-        if (audioContent == null) {
-          // call to google tts api failed
-          return true;
-        }
-
         if (!fs.existsSync(tmpDir)) {
           fs.mkdirSync(tmpDir);
         }
-
-        const filePath = path.join(tmpDir, `tts${uuid()}.mp3`);
-
-        // save audio content to file
-        await new Promise(resolve => fs.writeFile(filePath, Buffer.from(audioContent, "base64"), resolve));
-
-        // get the duration of this tts sound duration
-        const soundDuration = await frontendCommunicator.fireEventAsync<number>(
-          "getSoundDuration",
-          {
-            path: filePath,
-            format: "mp3",
-          }
-        );
-
-        // play the TTS audio
-        frontendCommunicator.send("playsound", {
-          volume: effect.volume || 10,
-          audioOutputDevice: effect.audioOutputDevice,
-          format: "mp3",
-          filepath: filePath,
-        });
-
-        // wait for the sound to finish (plus 1.5 sec buffer)
-        await wait((soundDuration + 1.5) * 1000);
-
-        // remove the audio file
-        await new Promise(resolve => fs.unlink(filePath, resolve));
-      } catch (error) {
-        logger.error("Google Cloud TTS Effect failed", error);
+      } catch (err) {
+        logger.error(`Failed to create Google TTS temporary folder at ${tmpDir}:`, err.message);
+        return effectResult(false);
       }
+
+      let audioContent: string;
+      // synthesize text via google tts
+      try {
+        audioContent = await getTTSAudioContent(effect, googleCloudAPIKey);
+      } catch (error) {
+        logger.error("Google Cloud TTS Effect failed", { error: error });
+      }
+
+      // save audio content to file
+      const filePath = path.join(tmpDir, `tts${uuid()}.mp3`);
+      if (!audioContent || !await writeFile(filePath, audioContent)) {
+        // call to google tts api failed, or file write failed
+        return effectResult(false);
+      }
+
+      // get the duration of this tts sound file in seconds
+      const soundDuration = await frontendCommunicator.fireEventAsync<number>(
+        "getSoundDuration", { 
+          format: "mp3",
+          path: filePath
+        }
+      );
+
+      // play the TTS audio
+      const soundData: PlaySoundData = {
+        audioOutputDevice: (!effect.audioOutputDevice || effect.audioOutputDevice.label === "App Default")
+          ? settings.getAudioOutputDevice()
+          : effect.audioOutputDevice,
+        filepath: filePath,
+        format: "mp3",
+        maxSoundLength: soundDuration + 1.5,
+        volume: effect.volume || 10
+      };
+      if (soundData.audioOutputDevice.deviceId === "overlay") {
+        // directly in the overlay
+        soundData.resourceToken = resourceTokenManager.storeResourcePath(filePath, soundData.maxSoundLength);
+        if (settings.useOverlayInstances() && effect.overlayInstance && settings.getOverlayInstances().includes(effect.overlayInstance)) {
+          soundData.overlayInstance = effect.overlayInstance;
+        }
+
+        event.sendDataToOverlay(soundData, soundData.overlayInstance);
+        logger.debug("Sent Google Cloud TTS audio to overlay");
+      } else {
+        // in Firebot
+        frontendCommunicator.send("playsound", soundData);
+        logger.debug("Sent Google Cloud TTS audio to playsound");
+      }
+
+      // return early when desired to start the next effect in the list
+      if (effect.waitComplete === false) {
+        setTimeout(() => removeFile(filePath), (soundDuration + 1.5) * 1000);
+        return effectResult(true);
+      }
+
+      // wait for the sound to finish (plus 250 ms buffer)
+      await wait((soundDuration + 0.25) * 1000);
+
+      // remove the audio file
+      await removeFile(filePath);
 
       // returning true tells the firebot effect system this effect has completed
       // and that it can continue to the next effect
-      return true;
+      return effectResult(true);
     },
   };
   return googleTtsEffectType;

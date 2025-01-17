@@ -1,28 +1,55 @@
-import axios from "axios";
+import { GoogleTtsError } from "./google-tts-error";
 import { EffectModel } from "./types";
 
 interface SynthesizeTextResponse {
-  audioContent: string;
+  audioContent?: string;
+  error?: {
+    code: number;
+    status: string;
+    message: string;
+  };
 }
 
 export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
 
-  const response = await axios.post<SynthesizeTextResponse>(url, {
-    input: {
-      text: effect.text,
+  const response = await fetch(url, {
+    method: "post",
+    headers: {
+      "Accept": "application/json",
+      "Content-Type": "application/json"
     },
-    voice: {
-      languageCode: effect.voiceName.substring(0,5),
-      name: effect.voiceName,
-      ssmlGender: effect.voiceGender,
-    },
-    audioConfig: {
-      audioEncoding: "MP3",
-      pitch: effect.pitch,
-      speakingRate: effect.speakingRate
-    },
+    body: JSON.stringify({
+      input: {
+        text: effect.text,
+      },
+      voice: {
+        languageCode: effect.voiceName.substring(0,5),
+        name: effect.voiceName,
+        ssmlGender: effect.voiceGender,
+      },
+      audioConfig: {
+        audioEncoding: "MP3",
+        pitch: effect.pitch,
+        speakingRate: effect.speakingRate
+      }
+    })
   });
+  
+  const responseData = await response.json() as SynthesizeTextResponse;
+  if (!response.ok) {
+    if (responseData?.error) {
+      throw new GoogleTtsError(responseData.error);
+    } else {
+      // The error wasn't loaded into the response body:
+      // *I* likely messed *something* up in the fetch request...
+      throw new GoogleTtsError({
+        code: response.status,
+        message: `${response.statusText}: ${await response.text()}`,
+        status: "UNKNOWN"
+      });
+    }
+  }
 
-  return response?.data?.audioContent;
+  return responseData?.audioContent;
 }
