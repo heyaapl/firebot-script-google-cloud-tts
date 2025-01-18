@@ -23,7 +23,7 @@ interface PlaySoundData {
 export function buildGoogleTtsEffectType(
   modules: ScriptModules,
   settings: FirebotSettings,
-  googleCloudAPIKey: string
+  getApiKey: () => string
 ) {
   const { frontendCommunicator, fs, path, resourceTokenManager } = modules;
 
@@ -175,7 +175,7 @@ export function buildGoogleTtsEffectType(
       let audioContent: string;
       // synthesize text via google tts
       try {
-        audioContent = await getTTSAudioContent(effect, googleCloudAPIKey);
+        audioContent = await getTTSAudioContent(effect, getApiKey());
       } catch (error) {
         logger.error("Google Cloud TTS Effect failed", { error: error });
       }

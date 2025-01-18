@@ -8,13 +8,14 @@ interface Params {
   testMessage?: string;
 }
 
+let params: Params = null;
 const script: Firebot.CustomScript<Params> = {
   getScriptManifest: () => {
     return {
       name: "Google Cloud TTS Effect",
       description: "Adds the Google Cloud TTS effect",
       author: "heyaapl",
-      version: "1.2",
+      version: "2.0",
       firebotVersion: "5",
       startupOnly: true,
     };
@@ -22,22 +23,27 @@ const script: Firebot.CustomScript<Params> = {
   getDefaultParameters: () => {
     return {
       googleCloudAPIKey: {
-        type: "string",
+        type: "password",
         title: "API Key",
-        description: "Google Cloud API Key (Restart Firebot After Setting)",
-        secondaryDescription: "You must have a Google Cloud API Key & Cloud Text-to-Speech Enabled for this to work. Follow the steps here to get started: https://github.com/heyaapl/firebot-script-google-cloud-tts#readme",
+        description: "Google Cloud API Key",
+        tip: "You must have a Google Cloud API Key & Cloud Text-to-Speech Enabled for this to work. Follow the [steps in the readme](https://github.com/heyaapl/firebot-script-google-cloud-tts?tab=readme-ov-file#how-to-use) to get started",
         default: ""
       }
     };
   },
+  parametersUpdated: (parameters) => {
+    params = parameters;
+  },
   run: (runRequest) => {
-    const { firebot, modules, parameters } = runRequest;
+    params = runRequest.parameters;
+
+    const { firebot, modules } = runRequest;
     const { settings } = firebot;
     const { effectManager, logger, path } = modules;
 
-    logger.info(parameters?.testMessage ?? "Google Cloud TTS plugin is starting up");
+    logger.info(params?.testMessage ?? "Google Cloud TTS plugin is starting up");
     // Not a fan of divergent testing, but I don't want to fully mockup runRequest
-    if (parameters?.testMessage) {
+    if (params?.testMessage) {
       return;
     }
 
@@ -45,9 +51,12 @@ const script: Firebot.CustomScript<Params> = {
     setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
     initLogger(logger);
     effectManager.registerEffect(
-      buildGoogleTtsEffectType(modules, settings, parameters.googleCloudAPIKey)
+      buildGoogleTtsEffectType(modules, settings, () => params?.googleCloudAPIKey)
     );
   },
+  stop: () => {
+    params = null;
+  }
 };
 
 export default script;
