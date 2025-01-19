@@ -218,12 +218,18 @@ export function buildGoogleTtsEffectType(
       }
 
       // get the duration of this tts sound file in seconds
-      const soundDuration = await frontendCommunicator.fireEventAsync<number>(
-        "getSoundDuration", { 
-          format: "mp3",
-          path: filePath
-        }
-      );
+      let soundDuration: number = undefined;
+      try {
+        soundDuration = await frontendCommunicator.fireEventAsync<number>(
+          "getSoundDuration", { 
+            format: "mp3",
+            path: filePath
+          }
+        );
+      } catch (err) {
+        logger.warn("Failed to get duration for Google TTS audio file; assuming thirty seconds", err.message);
+      }
+      soundDuration ??= 30;
 
       // play the TTS audio
       const soundData: PlaySoundData = {
