@@ -4,21 +4,7 @@ import { v4 as uuid } from "uuid";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
 import { tmpDir, wait } from "./utils";
-import { EffectModel } from "./types";
-
-interface PlaySoundData {
-  audioOutputDevice: {
-    deviceId?: string;
-    label?: string;
-  };
-  filepath: string;
-  format: string;
-  maxSoundLength: number;
-  volume: number;
-
-  overlayInstance?: string;
-  resourceToken?: string;
-};
+import { EffectModel, PlaySoundData } from "./types";
 
 export function buildGoogleTtsEffectType(
   modules: ScriptModules,
@@ -71,6 +57,7 @@ export function buildGoogleTtsEffectType(
       </eos-container>
 
       <eos-audio-output-device effect="effect" pad-top="true"></eos-audio-output-device>
+      <eos-overlay-instance ng-if="effect.audioOutputDevice && effect.audioOutputDevice.deviceId === 'overlay'" effect="effect" pad-top="true"></eos-overlay-instance>
 
       <eos-container header="Error Handling" pad-top="true">
         <firebot-checkbox label="Stop Effect List On Error" model="wantsStop" on-change="stopChanged(newValue)"
@@ -189,7 +176,7 @@ export function buildGoogleTtsEffectType(
           });
         });
       };
-      const writeFile = async (fd: string, b64Data: string): Promise<boolean> => {
+      const tryWriteFile = async (fd: string, b64Data: string): Promise<boolean> => {
         return new Promise<boolean>(resolve => {
           if (fd && b64Data) {
             fs.writeFile(fd, Buffer.from(b64Data, "base64"), (err) => {
@@ -225,7 +212,7 @@ export function buildGoogleTtsEffectType(
 
       // save audio content to file
       const filePath = path.join(tmpDir, `tts${uuid()}.mp3`);
-      if (!audioContent || !await writeFile(filePath, audioContent)) {
+      if (!audioContent || !await tryWriteFile(filePath, audioContent)) {
         // call to google tts api failed, or file write failed
         return effectResult(false);
       }
@@ -245,32 +232,27 @@ export function buildGoogleTtsEffectType(
           : effect.audioOutputDevice,
         filepath: filePath,
         format: "mp3",
-        maxSoundLength: soundDuration + 1.5,
-        volume: effect.volume || 10
+        isUrl: false,
+        maxSoundLength: soundDuration,
+        volume: effect.volume || 7
       };
       if (soundData.audioOutputDevice.deviceId === "overlay") {
-        // directly in the overlay
-        soundData.resourceToken = resourceTokenManager.storeResourcePath(filePath, soundData.maxSoundLength);
         if (settings.useOverlayInstances() && effect.overlayInstance && settings.getOverlayInstances().includes(effect.overlayInstance)) {
           soundData.overlayInstance = effect.overlayInstance;
         }
-
-        event.sendDataToOverlay(soundData, soundData.overlayInstance);
-        logger.debug("Sent Google Cloud TTS audio to overlay");
-      } else {
-        // in Firebot
-        frontendCommunicator.send("playsound", soundData);
-        logger.debug("Sent Google Cloud TTS audio to playsound");
+        soundData.resourceToken = resourceTokenManager.storeResourcePath(filePath, soundDuration);
       }
+      frontendCommunicator.send("playsound", soundData);
+      logger.debug("Sent Google Cloud TTS audio to playsound");
 
       // return early when desired to start the next effect in the list
       if (effect.waitComplete === false) {
-        setTimeout(() => removeFile(filePath), (soundDuration + 1.5) * 1000);
+        setTimeout(() => removeFile(filePath), (soundData.maxSoundLength + 5) * 1000);
         return effectResult(true);
       }
 
-      // wait for the sound to finish (plus 250 ms buffer)
-      await wait((soundDuration + 0.25) * 1000);
+      // wait for the sound to finish plus 1.5 second buffer
+      await wait((soundDuration + 1.5) * 1000);
 
       // remove the audio file
       await removeFile(filePath);
