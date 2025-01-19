@@ -71,8 +71,48 @@ export function buildGoogleTtsEffectType(
       </eos-container>
 
       <eos-audio-output-device effect="effect" pad-top="true"></eos-audio-output-device>
+
+      <eos-container header="Error Handling" pad-top="true">
+        <firebot-checkbox label="Stop Effect List On Error" model="wantsStop" on-change="stopChanged(newValue)"
+          tooltip="Request to stop future effects in the parent list from running should an error occur."
+        />
+        <firebot-checkbox label="Bubble to Parent Effect Lists" model="wantsBubbleStop" on-change="bubbleChanged(newValue)"
+          tooltip="Bubble a stop request up to all parent effect lists should an error occur. Useful if nested within a Conditional Effect, or a Preset Effects List, etc."
+        />
+      </eos-container>
     `,
     optionsController: ($scope) => {
+      $scope.bubbleChanged = (newValue: boolean) => {
+        if (newValue) {
+          if ($scope.effect.stopOnError === "stop") {
+            $scope.effect.stopOnError = "bubble-stop";
+          } else {
+            $scope.effect.stopOnError = "bubble";
+          }
+        } else {
+          if ($scope.effect.stopOnError === "bubble-stop") {
+            $scope.effect.stopOnError = "stop";
+          } else {
+            $scope.effect.stopOnError = false;
+          }
+        }
+      };
+      $scope.stopChanged = (newValue: boolean) => {
+        if (newValue) {
+          if ($scope.effect.stopOnError === "bubble") {
+            $scope.effect.stopOnError = "bubble-stop";
+          } else {
+            $scope.effect.stopOnError = "bubble";
+          }
+        } else {
+          if ($scope.effect.stopOnError === "bubble-stop") {
+            $scope.effect.stopOnError = "bubble";
+          } else {
+            $scope.effect.stopOnError = false;
+          }
+        }
+      };
+
       if ($scope.effect.volume == null) {
         $scope.effect.volume = 10;
       }
@@ -116,6 +156,9 @@ export function buildGoogleTtsEffectType(
       if ($scope.effect.speakingRate == null) {
         $scope.effect.speakingRate = 1;
       }
+
+      $scope.wantsBubbleStop = $scope.effect.stopOnError && $scope.effect.stopOnError.includes("bubble");
+      $scope.wantsStop = $scope.effect.stopOnError && $scope.effect.stopOnError.includes("stop");
     },
     optionsValidator: (effect) => {
       const errors = [];
