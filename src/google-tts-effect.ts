@@ -132,11 +132,6 @@ export function buildGoogleTtsEffectType(
       if ($scope.effect.voiceName == null){
         $scope.effect.voiceName = ($scope.voices as any)[0].name;
       }
-      //Google Cloud TTS is not switching genders, so this has been disabled for now. Uncomment the
-      //UI HTML to enable Gendered voices once Google's API returns the approriately gendered voice.
-      if ($scope.effect.voiceGender == null) {
-        $scope.effect.voiceGender = "SSML_VOICE_GENDER_UNSPECIFIED";
-      }
       if ($scope.effect.pitch == null) {
         $scope.effect.pitch = 0;
       }

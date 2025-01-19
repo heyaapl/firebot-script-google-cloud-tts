@@ -25,8 +25,7 @@ export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey:
       },
       voice: {
         languageCode: effect.voiceName.substring(0,5),
-        name: effect.voiceName,
-        ssmlGender: effect.voiceGender,
+        name: effect.voiceName
       },
       audioConfig: {
         audioEncoding: "MP3",

@@ -1,18 +1,32 @@
 export interface EffectModel {
+    /** The text to be synthesized into audio. */
     text: string;
+    /** The 0-10 volume level to play back the audio at. */
     volume: number;
+    /** Information about which audio device to play the audio on. */
     audioOutputDevice?: {
       deviceId?: string;
       label?: string;
     };
+    /** The name of the voice to use for speech synthesis. */
     voiceName: string;
-    voiceGender: string;
+    /** Voice pitch adjustment in semitones, from -20 to 20; default 0. */
     pitch: number;
+    /** Speech rate multiplier, from 0.25 to 4; default 1. */
     speakingRate: number;
+    
+    /** Which overlay instance should play back the audio. New in 2.0. */
     overlayInstance?: string;
+    /** How to handle effect errors. New in 2.0. */
     stopOnError?: false | "bubble" | "stop" | "bubble-stop";
+    /** `true` or `undefined` to wait for the audio to finish playback plus 1.5 seconds as in
+     * the 1.0 versions, or `false` to return as soon as the audio begins playback. New in 2.0.
+     */
     waitComplete?: boolean;
-  }
+
+    /** Used previously to allow selecting voice genders, but was obsoleted by Google. @deprecated */
+    voiceGender?: string;
+  };
 
   interface BasePlaySoundData {
     /** Information about which audio device to play the audio on. */
@@ -48,5 +62,5 @@ export interface EffectModel {
   };
   /** The data type of a "playsound" communicator signal argument,
    * as used by the Firebot app/services/sound.service.js PLAY_SOUND listener.
-  */
+   */
   export type PlaySoundData = PlaySoundFileData | PlaySoundUrlData;
