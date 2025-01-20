@@ -56,7 +56,11 @@ export function buildGoogleTtsEffectType(
           </div>
       </eos-container>
 
-      <eos-audio-output-device effect="effect" pad-top="true"></eos-audio-output-device>
+      <eos-container header="Wait" pad-top="true">
+        <firebot-checkbox label="Wait for sound To finish" model="effect.waitComplete" tooltip="Wait for the sound to finish before starting the next effect." />
+      </eos-container>
+
+      <eos-audio-output-device effect="effect" pad-top="false"></eos-audio-output-device>
       <eos-overlay-instance ng-if="effect.audioOutputDevice && effect.audioOutputDevice.deviceId === 'overlay'" effect="effect" pad-top="true"></eos-overlay-instance>
 
       <eos-container header="Error Handling" pad-top="true">
@@ -138,6 +142,8 @@ export function buildGoogleTtsEffectType(
       if ($scope.effect.speakingRate == null) {
         $scope.effect.speakingRate = 1;
       }
+      // `[undefined, null, true]`: sync playback mode; `false`: async playback
+      $scope.effect.waitComplete = ($scope.effect.waitComplete !== false);
 
       $scope.wantsBubbleStop = $scope.effect.stopOnError && $scope.effect.stopOnError.includes("bubble");
       $scope.wantsStop = $scope.effect.stopOnError && $scope.effect.stopOnError.includes("stop");
