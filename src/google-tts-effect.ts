@@ -60,12 +60,12 @@ export function buildGoogleTtsEffectType(
       <eos-overlay-instance ng-if="effect.audioOutputDevice && effect.audioOutputDevice.deviceId === 'overlay'" effect="effect" pad-top="true"></eos-overlay-instance>
 
       <eos-container header="Error Handling" pad-top="true">
-        <firebot-checkbox label="Stop Effect List On Error" model="wantsStop" on-change="stopChanged(newValue)"
-          tooltip="Request to stop future effects in the parent list from running should an error occur."
-        />
-        <firebot-checkbox label="Bubble to Parent Effect Lists" model="wantsBubbleStop" on-change="bubbleChanged(newValue)"
-          tooltip="Bubble a stop request up to all parent effect lists should an error occur. Useful if nested within a Conditional Effect, or a Preset Effects List, etc."
-        />
+          <firebot-checkbox label="Stop Effect List On Error" model="wantsStop" on-change="stopChanged(newValue)"
+              tooltip="Request to stop future effects in the parent list from running should an error occur."
+          />
+          <firebot-checkbox label="Bubble to Parent Effect Lists On Error" model="wantsBubbleStop" on-change="bubbleChanged(newValue)"
+              tooltip="Bubble a stop request up to all parent effect lists should an error occur. Useful if nested within a Conditional Effect, or a Preset Effects List, etc."
+          />
       </eos-container>
     `,
     optionsController: ($scope) => {
@@ -89,7 +89,7 @@ export function buildGoogleTtsEffectType(
           if ($scope.effect.stopOnError === "bubble") {
             $scope.effect.stopOnError = "bubble-stop";
           } else {
-            $scope.effect.stopOnError = "bubble";
+            $scope.effect.stopOnError = "stop";
           }
         } else {
           if ($scope.effect.stopOnError === "bubble-stop") {
