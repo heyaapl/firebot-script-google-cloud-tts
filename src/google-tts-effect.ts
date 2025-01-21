@@ -75,12 +75,14 @@ export function buildGoogleTtsEffectType(
     optionsController: ($scope) => {
       $scope.bubbleChanged = (newValue: boolean) => {
         if (newValue) {
+          // add bubble
           if ($scope.effect.stopOnError === "stop") {
             $scope.effect.stopOnError = "bubble-stop";
           } else {
             $scope.effect.stopOnError = "bubble";
           }
         } else {
+          // remove bubble
           if ($scope.effect.stopOnError === "bubble-stop") {
             $scope.effect.stopOnError = "stop";
           } else {
@@ -90,12 +92,14 @@ export function buildGoogleTtsEffectType(
       };
       $scope.stopChanged = (newValue: boolean) => {
         if (newValue) {
+          // add stop
           if ($scope.effect.stopOnError === "bubble") {
             $scope.effect.stopOnError = "bubble-stop";
           } else {
             $scope.effect.stopOnError = "stop";
           }
         } else {
+          // remove stop
           if ($scope.effect.stopOnError === "bubble-stop") {
             $scope.effect.stopOnError = "bubble";
           } else {
@@ -142,7 +146,7 @@ export function buildGoogleTtsEffectType(
       if ($scope.effect.speakingRate == null) {
         $scope.effect.speakingRate = 1;
       }
-      // `[undefined, null, true]`: sync playback mode; `false`: async playback
+      // `(undefined | null | true)` => `true` for sync playback mode; `false` for async playback
       $scope.effect.waitComplete = ($scope.effect.waitComplete !== false);
 
       $scope.wantsBubbleStop = $scope.effect.stopOnError && $scope.effect.stopOnError.includes("bubble");
