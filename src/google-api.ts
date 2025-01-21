@@ -13,7 +13,7 @@ interface SynthesizeTextResponse {
 export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
   const getVoiceNameLangCode = (voiceName: string): string => {
-    const secondHyphenIdx = voiceName.indexOf("-", voiceName.indexOf("-"));
+    const secondHyphenIdx = voiceName.indexOf("-", voiceName.indexOf("-") + 1);
     return voiceName.slice(0, secondHyphenIdx);
   };
 
