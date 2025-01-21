@@ -28,6 +28,14 @@ export interface EffectModel {
     voiceGender?: string;
 };
 
+/** Information about a Google TTS voice. */
+export interface VoiceData {
+    /** The unique name of the voice, such as "en-US-Wavenet-F". */
+    name: string;
+    /** The language (locale) and gender of the voice, such as "English (US) | Female". */
+    language: string;
+};
+
 interface BasePlaySoundData {
     /** Information about which audio device to play the audio on. */
     audioOutputDevice: {

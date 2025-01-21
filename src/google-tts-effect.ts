@@ -29,8 +29,8 @@ export function buildGoogleTtsEffectType(
 
       <eos-container header="Voice" pad-top="true">
         <ui-select ng-model="effect.voiceName" theme="bootstrap">
-            <ui-select-match placeholder="Select or search for a voice...">{{$select.selected.name}}</ui-select-match>
-            <ui-select-choices repeat="voice.name as voice in voices | filter: { language: $select.search }" style="position:relative;">
+            <ui-select-match placeholder="Select or search for a voice…">{{$select.selected.name}}</ui-select-match>
+            <ui-select-choices repeat="voice.name as voice in voices | filter: $select.search" style="position:relative;">
                 <div ng-bind-html="voice.name | highlight: $select.search"></div>
                 <small class="muted"><strong>{{voice.language}}</small>
             </ui-select-choices>
@@ -72,7 +72,7 @@ export function buildGoogleTtsEffectType(
           />
       </eos-container>
     `,
-    optionsController: ($scope) => {
+    optionsController: ($scope, backendCommunicator: any) => {
       $scope.bubbleChanged = (newValue: boolean) => {
         if (newValue) {
           // add bubble
@@ -111,34 +111,10 @@ export function buildGoogleTtsEffectType(
       if ($scope.effect.volume == null) {
         $scope.effect.volume = 10;
       }
-      $scope.voices = [
-        {name:"en-US-Wavenet-A", language: "English (US) | Male"},
-        {name:"en-US-Wavenet-B", language: "English (US) | Male"},
-        {name:"en-US-Wavenet-C", language: "English (US) | Female"},
-        {name:"en-US-Wavenet-D", language: "English (US) | Male"},
-        {name:"en-US-Wavenet-E", language: "English (US) | Female"},
-        {name:"en-US-Wavenet-F", language: "English (US) | Female"},
-        {name:"en-US-Wavenet-G", language: "English (US) | Female"},
-        {name:"en-US-Wavenet-H", language: "English (US) | Female"},
-        {name:"en-US-Wavenet-I", language: "English (US) | Male"},
-        {name:"en-US-Wavenet-J", language: "English (US) | Male"},
-        {name:"en-GB-Wavenet-A", language: "English (UK) | Female"},
-        {name:"en-GB-Wavenet-B", language: "English (UK) | Male"},
-        {name:"en-GB-Wavenet-C", language: "English (UK) | Female"},
-        {name:"en-GB-Wavenet-D", language: "English (UK) | Male"},
-        {name:"en-GB-Wavenet-F", language: "English (UK) | Female"},
-        {name:"en-AU-Wavenet-A", language: "English (AU) | Female"},
-        {name:"en-AU-Wavenet-B", language: "English (AU) | Male"},
-        {name:"en-AU-Wavenet-C", language: "English (AU) | Female"},
-        {name:"en-AU-Wavenet-D", language: "English (AU) | Male"},
-        {name:"en-IN-Wavenet-A", language: "English (IN) | Female"},
-        {name:"en-IN-Wavenet-B", language: "English (IN) | Male"},
-        {name:"en-IN-Wavenet-C", language: "English (IN) | Male"},
-        {name:"en-IN-Wavenet-D", language: "English (IN) | Female"}
-      ]as Array<{name:string;language:string}>;
+      $scope.voices = backendCommunicator.fireEventSync("getGoogleTtsVoices") ?? [];
 
-      if ($scope.effect.voiceName == null){
-        $scope.effect.voiceName = ($scope.voices as any)[0].name;
+      if ($scope.effect.voiceName == null) {
+        $scope.effect.voiceName = "en-US-Wavenet-A"; // Historical default
       }
       if ($scope.effect.pitch == null) {
         $scope.effect.pitch = 0;

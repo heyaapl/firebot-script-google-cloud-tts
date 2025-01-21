@@ -12,6 +12,10 @@ interface SynthesizeTextResponse {
 
 export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
+  const getVoiceNameLangCode = (voiceName: string): string => {
+    const secondHyphenIdx = voiceName.indexOf("-", voiceName.indexOf("-"));
+    return voiceName.slice(0, secondHyphenIdx);
+  };
 
   const response = await fetch(url, {
     method: "post",
@@ -24,7 +28,7 @@ export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey:
         text: effect.text,
       },
       voice: {
-        languageCode: effect.voiceName.substring(0,5),
+        languageCode: getVoiceNameLangCode(effect.voiceName),
         name: effect.voiceName
       },
       audioConfig: {
