@@ -39,9 +39,7 @@ const script: Firebot.CustomScript<Params> = {
   run: (runRequest) => {
     params = runRequest.parameters;
 
-    const { firebot, modules } = runRequest;
-    const { settings } = firebot;
-    const { effectManager, frontendCommunicator, logger, path } = modules;
+    const { effectManager, frontendCommunicator, logger, path } = runRequest.modules;
 
     logger.info(params?.testMessage ?? "Google Cloud TTS plugin is starting up");
     // Not a fan of divergent testing, but I don't want to fully mockup runRequest
@@ -52,13 +50,21 @@ const script: Firebot.CustomScript<Params> = {
       };
     }
 
-    // `%appdata%/Firebot/v5/profiles/{profile_name}/scripts` -> `%appdata%/Firebot/tmp/google-tts`
-    setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
-    initLogger(logger);
-    effectManager.registerEffect(
-      buildGoogleTtsEffectType(modules, settings, () => params?.googleCloudAPIKey)
-    );
-    frontendCommunicator.on("getGoogleTtsVoices", voices.getSupportedVoices);
+    try {
+      // `%appdata%/Firebot/v5/profiles/{profile_name}/scripts` -> `%appdata%/Firebot/tmp/google-tts`
+      setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
+      initLogger(logger);
+      effectManager.registerEffect(
+        buildGoogleTtsEffectType(runRequest.modules, runRequest.firebot.settings, () => params?.googleCloudAPIKey)
+      );
+      frontendCommunicator.on("getGoogleTtsVoices", voices.getSupportedVoices);
+    } catch (error) {
+      return {
+        effects: [],
+        errorMessage: error?.message ?? "An unknown error occurred",
+        success: false
+      };
+    }
     return {
       effects: [],
       success: true
