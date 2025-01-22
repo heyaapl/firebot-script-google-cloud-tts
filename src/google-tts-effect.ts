@@ -13,7 +13,7 @@ export function buildGoogleTtsEffectType(
   settings: FirebotSettings,
   getApiKey: () => string
 ) {
-  const { frontendCommunicator, fs, path, resourceTokenManager } = modules;
+  const { eventManager, frontendCommunicator, fs, path, resourceTokenManager } = modules;
 
   const googleTtsEffectType: Firebot.EffectType<EffectModel> = {
     definition: {
@@ -174,6 +174,14 @@ export function buildGoogleTtsEffectType(
         const cost = (category != null)
           ? (category.countBytes ? new Blob([effect.text]).size : effect.text.length)
           : 0;
+
+        if (wasBilled && cost > 0) {
+          eventManager.triggerEvent("google-cloud-tts", "usage", {
+            bucket: category.bucket,
+            cost: cost
+          });
+        }
+
         const success = wasBilled && duration && duration > 0;
         return {
           execution: {
