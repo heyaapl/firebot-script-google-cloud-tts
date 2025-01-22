@@ -11,6 +11,15 @@ interface SynthesizeTextResponse {
 }
 
 export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
+  // shortcut when the script has been unloaded or is not configured
+  if (!googleCloudAPIKey) {
+    throw new GoogleTtsError({
+      code: 401,
+      message: "No API key available",
+      status: "Unauthorized"
+    });
+  }
+
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
   const getVoiceNameLangCode = (voiceName: string): string => {
     const secondHyphenIdx = voiceName.indexOf("-", voiceName.indexOf("-") + 1);

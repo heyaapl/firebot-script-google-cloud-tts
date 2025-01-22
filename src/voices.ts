@@ -1,10 +1,28 @@
-import { VoiceData } from "./types";
+import { PricingBucket, SpeechModel, VoiceData } from "./types";
 
-// All voices *except* Journey models, which don't offer pitch or rate adjustment;
-// ref https://cloud.google.com/text-to-speech/docs/voice-types#journey_voices
-//
+/** Accounting specifics paired with a SpeechModel. */
+type VoiceCategory = {
+    speechModel: SpeechModel;
+    bucket: PricingBucket;
+    /** `true` to count the billing units by bytes; `false` to count them by character. */
+    countBytes: boolean;
+};
+
+// Generated from https://cloud.google.com/text-to-speech/pricing?hl=en
+const categories: ReadonlyArray<VoiceCategory> = [
+    // TODO: the Casual voice is a preview, no clue which bucket it's in
+    { speechModel: "Casual", bucket: "Studio", countBytes: true },
+    { speechModel: "Journey", bucket: "Journey", countBytes: true },
+    { speechModel: "Neural", bucket: "Neural", countBytes: true },
+    { speechModel: "News", bucket: "Studio", countBytes: true },
+    { speechModel: "Polyglot", bucket: "Polyglot", countBytes: true },
+    { speechModel: "Standard", bucket: "Standard", countBytes: false },
+    { speechModel: "Studio", bucket: "Studio", countBytes: true },
+    { speechModel: "Wavenet", bucket: "Wavenet", countBytes: false },
+];
+
 // Generated from https://cloud.google.com/text-to-speech/docs/voices
-const nonJourneyVoices: VoiceData[] = [
+const allVoices: ReadonlyArray<VoiceData> = [
     { name: "af-ZA-Standard-A", language: "Afrikaans (South Africa) | Female" },
     { name: "ar-XA-Standard-A", language: "Arabic | Female" },
     { name: "ar-XA-Standard-B", language: "Arabic | Male" },
@@ -546,11 +564,46 @@ const nonJourneyVoices: VoiceData[] = [
     { name: "vi-VN-Wavenet-B", language: "Vietnamese (Vietnam) | Male" },
     { name: "vi-VN-Wavenet-C", language: "Vietnamese (Vietnam) | Female" },
     { name: "vi-VN-Wavenet-D", language: "Vietnamese (Vietnam) | Male" },
-].filter(v => !v.name.includes("Journey"));
+];
+
+function nonJourneyVoices() {
+    return allVoices.filter(v => !v.name.includes("Journey"));
+};
 
 export default {
-    /** Synchronously get an array of all of the voices supported by this plugin. */
-    getVoices: () => nonJourneyVoices,
-    /** Get the promise of an array of all of the voices supported by this plugin. */
-    getVoicesAsync: () => new Promise<VoiceData[]>((resolve) => resolve(nonJourneyVoices)),
+    /** Get an array of tuples of a SpeechModel paired with some accounting specifics. */
+    getAllCategories: (): ReadonlyArray<VoiceCategory> => categories,
+    /** Get an array of the names of all known pricing buckets. */
+    getAllPricingBuckets: (): ReadonlyArray<PricingBucket> => categories.map(t => t.bucket).filter((v, n, a) => a.indexOf(v) === n),
+    /** Get an array of all known speech synthesis voice models. */
+    getAllSpeechModels: (): ReadonlyArray<SpeechModel> => categories.map(t => t.speechModel),
+    /** Get an array of all of the voices supported by this plugin. */
+    getSupportedVoices: (): ReadonlyArray<VoiceData> => nonJourneyVoices(),
+
+    getVoiceCategory: (voiceName: string): VoiceCategory => {
+        return categories.find(cat => voiceName?.includes(cat.speechModel)) ??
+            { speechModel: "Unknown", bucket: "Unknown", countBytes: true };
+    },
+    getVoiceGender: (voiceName: string): "Male" | "Female" | null => {
+        const langGender = allVoices.find(v => v.name === voiceName)?.language;
+        if (langGender?.endsWith("Female")) {
+            return "Female";
+        } else if (langGender?.endsWith("Male")) {
+            return "Male";
+        }
+        return null;
+    },
+    getVoiceLangCode: (voiceName: string, defaultValue: string = null): string | null => {
+        const parts = voiceName?.split("-", 2) ?? [];
+        if (parts.length === 2 && parts[0] && parts[1]) {
+          return `${parts[0]}-${parts[1]}`;
+        }
+        return defaultValue;
+    },
+    getVoicePricingBucket: (voiceName: string): PricingBucket => {
+        return categories.find(cat => voiceName?.includes(cat.speechModel))?.bucket ?? "Unknown";
+    },
+    getVoiceSpeechModel: (voiceName: string): SpeechModel => {
+        return categories.find(cat => voiceName?.includes(cat.speechModel))?.speechModel ?? "Unknown";
+    },
 };

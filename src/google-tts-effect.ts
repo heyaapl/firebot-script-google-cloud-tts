@@ -1,10 +1,12 @@
 import { Firebot, ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
+import { EffectTriggerResponse } from "@crowbartools/firebot-custom-scripts-types/types/effects";
 import { FirebotSettings } from "@crowbartools/firebot-custom-scripts-types/types/settings";
 import { v4 as uuid } from "uuid";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
 import { tmpDir, wait } from "./utils";
-import { EffectModel, PlaySoundData } from "./types";
+import { EffectModel, PlaySoundData, SynthesisResult } from "./types";
+import voices from "./voices";
 
 export function buildGoogleTtsEffectType(
   modules: ScriptModules,
@@ -21,6 +23,33 @@ export function buildGoogleTtsEffectType(
       icon: "fad fa-microphone-alt",
       categories: ["fun"],
       dependencies: [],
+      outputs: [
+        {
+          defaultName: "ttsAudioDuration",
+          label: "Audio Duration",
+          description: "The duration of the synthesized audio, in seconds."
+        },
+        {
+          defaultName: "ttsBucket",
+          label: "Pricing Bucket",
+          description: "The name of the accounting bucket that was used."
+        },
+        {
+          defaultName: "ttsCost",
+          label: "Units Spent",
+          description: "The number of characters or bytes that were synthesized into speech."
+        },
+        {
+          defaultName: "ttsSucceeded",
+          label: "Succeeded",
+          description: "true when the audio is or was successfully played, or false if an error occurred."
+        },
+        {
+          defaultName: "ttsVoiceName",
+          label: "Voice Name",
+          description: "The name of the voice that was used for synthesizing speech."
+        },
+      ]
     },
     optionsTemplate: `
       <eos-container header="Text">
@@ -138,16 +167,30 @@ export function buildGoogleTtsEffectType(
     onTriggerEvent: async (event) => {
       const effect = event.effect;
 
-      const effectResult = (success: boolean) => {
+      const effectResult = (wasBilled: boolean, duration?: number): EffectTriggerResponse<SynthesisResult> => {
+        const category = (wasBilled && effect.text.length > 0)
+          ? voices.getVoiceCategory(effect.voiceName)
+          : null;
+        const cost = (category != null)
+          ? (category.countBytes ? new Blob([effect.text]).size : effect.text.length)
+          : 0;
+        const success = wasBilled && duration && duration > 0;
         return {
           execution: {
             bubbleStop: !success && effect.stopOnError && effect.stopOnError.includes("bubble"),
             stop: !success && effect.stopOnError && effect.stopOnError.includes("stop")
           },
+          outputs: {
+            ttsAudioDuration: success ? duration : 0,
+            ttsBucket: category?.bucket ?? "Unknown",
+            ttsCost: cost,
+            ttsSucceeded: success,
+            ttsVoiceName: effect.voiceName
+          },
           success: success
         };
       };
-      const removeFile = (fd: string): Promise<boolean> => {
+      const tryRemoveFile = (fd: string): Promise<boolean> => {
         return new Promise<boolean>(resolve => {
           fs.unlink(fd, (err) => {
             if (err) {
@@ -184,18 +227,20 @@ export function buildGoogleTtsEffectType(
       }
 
       let audioContent: string;
-      // synthesize text via google tts
+      // synthesize audio via google tts
       try {
         audioContent = await getTTSAudioContent(effect, getApiKey());
       } catch (error) {
         logger.error("Google Cloud TTS Effect failed", { error: error });
       }
+      if (!audioContent) {
+        return effectResult(false);
+      } 
 
       // save audio content to file
       const filePath = path.join(tmpDir, `tts${uuid()}.mp3`);
-      if (!audioContent || !await tryWriteFile(filePath, audioContent)) {
-        // call to google tts api failed, or file write failed
-        return effectResult(false);
+      if (!await tryWriteFile(filePath, audioContent)) {
+        return effectResult(true);
       }
 
       // get the duration of this tts sound file in seconds
@@ -234,19 +279,19 @@ export function buildGoogleTtsEffectType(
 
       // return early when desired to start the next effect in the list
       if (effect.waitComplete === false) {
-        setTimeout(() => removeFile(filePath), (soundData.maxSoundLength + 5) * 1000);
-        return effectResult(true);
+        setTimeout(() => tryRemoveFile(filePath), (soundData.maxSoundLength + 5) * 1000);
+        return effectResult(true, soundDuration);
       }
 
       // wait for the sound to finish plus 1.5 second buffer
       await wait((soundDuration + 1.5) * 1000);
 
       // remove the audio file
-      await removeFile(filePath);
+      await tryRemoveFile(filePath);
 
       // returning true tells the firebot effect system this effect has completed
       // and that it can continue to the next effect
-      return effectResult(true);
+      return effectResult(true, soundDuration);
     },
   };
   return googleTtsEffectType;

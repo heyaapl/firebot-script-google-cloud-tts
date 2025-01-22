@@ -46,7 +46,10 @@ const script: Firebot.CustomScript<Params> = {
     logger.info(params?.testMessage ?? "Google Cloud TTS plugin is starting up");
     // Not a fan of divergent testing, but I don't want to fully mockup runRequest
     if (params?.testMessage) {
-      return;
+      return {
+        effects: [],
+        success: false
+      };
     }
 
     // `%appdata%/Firebot/v5/profiles/{profile_name}/scripts` -> `%appdata%/Firebot/tmp/google-tts`
@@ -55,7 +58,11 @@ const script: Firebot.CustomScript<Params> = {
     effectManager.registerEffect(
       buildGoogleTtsEffectType(modules, settings, () => params?.googleCloudAPIKey)
     );
-    frontendCommunicator.on("getGoogleTtsVoices", voices.getVoices);
+    frontendCommunicator.on("getGoogleTtsVoices", voices.getSupportedVoices);
+    return {
+      effects: [],
+      success: true
+    };
   },
   stop: () => {
     params = null;
