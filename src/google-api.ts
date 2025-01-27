@@ -1,5 +1,6 @@
 import { GoogleTtsError } from "./google-tts-error";
 import { EffectModel } from "./types";
+import voices from "./voices";
 
 interface SynthesizeTextResponse {
   audioContent?: string;
@@ -20,12 +21,8 @@ export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey:
     });
   }
 
+  const languageCode = voices.getVoiceLangCode(effect.voiceName);
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
-  const getVoiceNameLangCode = (voiceName: string): string => {
-    const secondHyphenIdx = voiceName.indexOf("-", voiceName.indexOf("-") + 1);
-    return voiceName.slice(0, secondHyphenIdx);
-  };
-
   const response = await fetch(url, {
     method: "post",
     headers: {
@@ -37,7 +34,7 @@ export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey:
         text: effect.text,
       },
       voice: {
-        languageCode: getVoiceNameLangCode(effect.voiceName),
+        languageCode: languageCode,
         name: effect.voiceName
       },
       audioConfig: {
