@@ -1,6 +1,6 @@
 import { EventFilter } from "@crowbartools/firebot-custom-scripts-types/types/modules/event-filter-manager";
 
-// EventFilter is lacking in FBCST, and the filter rewrite hasn't yet propagated there
+// EventFilter is lacking in FBCST
 type NumberFilter = Omit<EventFilter, "presetValues" | "valueType"> & {
     valueType: "number";
 };
@@ -8,7 +8,7 @@ type NumberFilter = Omit<EventFilter, "presetValues" | "valueType"> & {
 const costFilter: NumberFilter = {
     id: "google-cloud-tts:cost",
     name: "Cost",
-    description: "Filter by the number of characters or bytes expended by the TTS effect.",
+    description: "Filter by the number of characters or bytes used by the TTS effect.",
     valueType: "number",
     events: [{ eventSourceId: "google-cloud-tts", eventId: "usage" }],
     comparisonTypes: [

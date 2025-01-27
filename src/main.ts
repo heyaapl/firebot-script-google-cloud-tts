@@ -1,14 +1,15 @@
 import { Firebot } from "@crowbartools/firebot-custom-scripts-types";
-import ttsEventSource from "./event-source";
-import { registerTtsEventFilters } from "./filters";
+import { registerGoogleTtsEvents } from "./events";
 import { buildGoogleTtsEffectType } from "./google-tts-effect";
 import { initLogger } from "./logger";
-import ttsUsageVariable from "./usage-variable";
 import { setTmpDir } from "./utils";
+import { registerGoogleTtsVariables } from "./variables";
 import voices from "./voices";
 
 interface Params {
+  /** The keys to the kingdom. */
   googleCloudAPIKey: string;
+  /** A lame attempt to get some form of unit testing working. */
   testMessage?: string;
 }
 
@@ -41,7 +42,8 @@ const script: Firebot.CustomScript<Params> = {
   run: (runRequest) => {
     params = runRequest.parameters;
 
-    const { effectManager, eventFilterManager, eventManager, frontendCommunicator, logger, path, replaceVariableManager } = runRequest.modules;
+    const { modules } = runRequest;
+    const { effectManager, frontendCommunicator, logger, path } = modules;
 
     logger.info(params?.testMessage ?? "Google Cloud TTS plugin is starting up");
     // Not a fan of divergent testing, but I don't want to fully mockup runRequest
@@ -56,12 +58,13 @@ const script: Firebot.CustomScript<Params> = {
       // `%appdata%/Firebot/v5/profiles/{profile_name}/scripts` -> `%appdata%/Firebot/tmp/google-tts`
       setTmpDir(path.join(SCRIPTS_DIR, '..', '..', '..', '..', 'tmp', 'google-tts'));
       initLogger(logger);
+
       effectManager.registerEffect(
-        buildGoogleTtsEffectType(runRequest.modules, runRequest.firebot.settings, () => params?.googleCloudAPIKey)
+        buildGoogleTtsEffectType(modules, runRequest.firebot.settings, () => params?.googleCloudAPIKey)
       );
-      eventManager.registerEventSource(ttsEventSource);
-      registerTtsEventFilters(eventFilterManager);
-      replaceVariableManager.registerReplaceVariable(ttsUsageVariable);
+      registerGoogleTtsEvents(modules.eventManager, modules.eventFilterManager);
+      registerGoogleTtsVariables(modules.replaceVariableManager);
+
       frontendCommunicator.on("getGoogleTtsVoices", voices.getSupportedVoices);
     } catch (error) {
       return {

@@ -1,9 +1,9 @@
 import { EventFilter } from "@crowbartools/firebot-custom-scripts-types/types/modules/event-filter-manager";
 
-const pricingBucketFilter: EventFilter = {
-    id: "google-cloud-tts:pricing-bucket",
-    name: "Pricing Bucket",
-    description: "Filter by which pricing bucket a TTS effect utilized.",
+const pricingTierFilter: EventFilter = {
+    id: "google-cloud-tts:pricing-tier",
+    name: "Pricing Tier",
+    description: "Filter by which pricing tier a TTS effect utilized.",
     valueType: "preset",
     events: [
         { eventSourceId: "google-cloud-tts", eventId: "usage" }
@@ -14,7 +14,7 @@ const pricingBucketFilter: EventFilter = {
         { display: "Neural2", value: "Neural" },
         { display: "Polyglot", value: "Polyglot" },
         { display: "Journey", value: "Journey" },
-        { display: "Studio", value: "Studio" },
+        { display: "Casual, News, or Studio", value: "Studio" },
         { display: "Unknown", value: "Unknown" },
     ])),
     comparisonTypes: [
@@ -38,4 +38,4 @@ const pricingBucketFilter: EventFilter = {
     }
 };
 
-export default pricingBucketFilter as any as EventFilter;
+export default pricingTierFilter as any as EventFilter;

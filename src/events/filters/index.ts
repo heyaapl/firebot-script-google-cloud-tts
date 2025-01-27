@@ -1,11 +1,11 @@
 import { ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
 import costFilter from "./cost";
-import pricingBucketFilter from "./pricing-bucket";
+import pricingTierFilter from "./pricing-tier";
 
-export function registerTtsEventFilters(eventFilterManager: ScriptModules["eventFilterManager"]) {
+export function registerGoogleTtsEventFilters(eventFilterManager: ScriptModules["eventFilterManager"]) {
     const ttsEventFilters = [
         costFilter,
-        pricingBucketFilter,
+        pricingTierFilter,
     ];
 
     for (const filter of ttsEventFilters) {

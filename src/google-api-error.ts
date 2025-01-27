@@ -7,14 +7,14 @@ type ErrData = {
   status: string;
 };
 
-export class GoogleTtsError extends Error {
+export class GoogleApiError extends Error {
   private readonly _errData: ErrData;
 
   constructor(errData: ErrData) {
     super(`E_${errData.status} (code ${errData.code}): ${errData.message}`);
     this._errData = errData;
-    this.name = "GoogleTtsError";
-    Object.setPrototypeOf(this, GoogleTtsError.prototype);
+    this.name = "GoogleApiError";
+    Object.setPrototypeOf(this, GoogleApiError.prototype);
   }
 
   get code() {

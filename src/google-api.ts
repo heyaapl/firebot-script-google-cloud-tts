@@ -1,4 +1,4 @@
-import { GoogleTtsError } from "./google-tts-error";
+import { GoogleApiError } from "./google-api-error";
 import { EffectModel } from "./types";
 import voices from "./voices";
 
@@ -14,7 +14,7 @@ interface SynthesizeTextResponse {
 export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
   // shortcut when the script has been unloaded or is not configured
   if (!googleCloudAPIKey) {
-    throw new GoogleTtsError({
+    throw new GoogleApiError({
       code: 401,
       message: "No API key available",
       status: "Unauthorized"
@@ -48,11 +48,11 @@ export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey:
   const responseData = await response.json() as SynthesizeTextResponse;
   if (!response.ok) {
     if (responseData?.error) {
-      throw new GoogleTtsError(responseData.error);
+      throw new GoogleApiError(responseData.error);
     } else {
       // The error wasn't loaded into the response body:
       // *I* likely messed *something* up in the fetch request...
-      throw new GoogleTtsError({
+      throw new GoogleApiError({
         code: response.status,
         message: `${response.statusText}: ${await response.text()}`,
         status: "UNKNOWN"
