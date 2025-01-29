@@ -14,14 +14,14 @@ interface SynthesizeTextResponse {
 export async function getTTSAudioContent(effect: EffectModel, googleCloudAPIKey: string): Promise<string | null> {
   // shortcut when the script has been unloaded or is not configured
   if (!googleCloudAPIKey) {
-    throw new GoogleApiError({
-      code: 401,
-      message: "No API key available",
-      status: "Unauthorized"
-    });
+    throw new Error("googleCloudApiKey is nullish; please configure the plugin");
   }
 
   const languageCode = voices.getVoiceLangCode(effect.voiceName);
+  if (!languageCode) {
+    throw new Error(`Unknown language code for Google TTS voice ${effect.voiceName ?? "(null)"}`);
+  }
+
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${googleCloudAPIKey}`;
   const response = await fetch(url, {
     method: "post",

@@ -606,4 +606,11 @@ export default {
     getVoiceSpeechModel: (voiceName: string): SpeechModel => {
         return categories.find(cat => voiceName?.includes(cat.speechModel))?.speechModel ?? "Unknown";
     },
+    /** Get a boolean value indicating whether a voice is included in the list of known voices.
+     * @param voiceName The name of the voice to check.
+     * @returns `true` if the voiceName is known; `false` otherwise.
+     */
+    isKnownVoice: (voiceName: string): boolean => {
+        return voiceName && allVoices.some(v => v.name === voiceName);
+    }
 };
