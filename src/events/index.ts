@@ -1,4 +1,4 @@
-import { ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
+import type { ScriptModules } from "../firebot-extensions";
 import googleTtsEventSource from "./event-source";
 import { registerGoogleTtsEventFilters } from "./filters";
 

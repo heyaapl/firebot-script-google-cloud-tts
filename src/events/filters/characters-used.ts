@@ -1,13 +1,8 @@
-import { EventFilter } from "@crowbartools/firebot-custom-scripts-types/types/modules/event-filter-manager";
+import type { EventFilter } from "../../firebot-extensions";
 
-// EventFilter is lacking in FBCST
-type NumberFilter = Omit<EventFilter, "presetValues" | "valueType"> & {
-    valueType: "number";
-};
-
-const costFilter: NumberFilter = {
+const charactersUsedFilter: EventFilter<number> = {
     id: "google-cloud-tts:cost",
-    name: "Cost",
+    name: "Characters Used",
     description: "Filter by the number of characters or bytes used by the TTS effect.",
     valueType: "number",
     events: [{ eventSourceId: "google-cloud-tts", eventId: "usage" }],
@@ -22,7 +17,10 @@ const costFilter: NumberFilter = {
     predicate: async (filterSettings, eventData) => {
         const { comparisonType, value } = filterSettings;
         const { eventMeta } = eventData;
-        const eventValue = eventMeta["cost"] ?? 0;
+        let eventValue = "cost" in eventMeta ? Number(eventMeta["cost"]) : 0;
+        if (Number.isNaN(eventValue) || !Number.isFinite(eventValue)) {
+            eventValue = 0;
+        }
 
         switch (comparisonType) {
             case "is":
@@ -44,4 +42,4 @@ const costFilter: NumberFilter = {
     }
 };
 
-export default costFilter as any as EventFilter;
+export default charactersUsedFilter;

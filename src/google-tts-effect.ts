@@ -1,12 +1,44 @@
-import { Firebot, ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
-import { EffectTriggerResponse } from "@crowbartools/firebot-custom-scripts-types/types/effects";
-import { FirebotSettings } from "@crowbartools/firebot-custom-scripts-types/types/settings";
-import { v4 as uuid } from "uuid";
+import type { ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
+import type { EffectTriggerResponse } from "@crowbartools/firebot-custom-scripts-types/types/effects";
+import type { FirebotSettings } from "@crowbartools/firebot-custom-scripts-types/types/settings";
+import type { EffectType } from "./firebot-extensions";
 import { getTTSAudioContent } from "./google-api";
 import { logger } from "./logger";
+import type { EffectModel, PlaySoundData, SynthesisResult, VoiceData } from "./types";
 import { tmpDir, wait } from "./utils";
-import { EffectModel, PlaySoundData, SynthesisResult } from "./types";
 import voices from "./voices";
+import ng from "angular";
+import { v4 as uuid } from "uuid";
+
+interface EffectScope extends ng.IScope {
+  /** `true` when the voice is guaranteed to utilize a Chirp voice model; `false` when a variable
+   * voice, or a non-Chirp voice is selected.
+   */
+  chirpVoice: boolean;
+  /** The effect that the UI is operating upon. */
+  effect: EffectModel;
+  /** `true` when the UI allows for variable voices along with a fallback; `false` otherwise. */
+  variableVoice: boolean;
+  /** The list of known voices. */
+  voices: ReadonlyArray<VoiceData>;
+  /** `true` when the effect should bubble a stop request upon failure; `false` otherwise. */
+  wantsBubbleStop: boolean;
+  /** `true` when the effect should send a stop request upon failure; `false` otherwise. */
+  wantsStop: boolean;
+
+  /** Invoked when the `wantsBubbleStop` value is changed in the UI. */
+  bubbleChanged(newValue: boolean): void;
+  /** Open a URL in an external web browser. */
+  openLink(uri: string): void;
+  /** Invoked when the `wantsStop` value was changed in the UI. */
+  stopChanged(newValue: boolean): void;
+  /** Invoked when the non-variable `effect.voiceName` value is changed in the UI. */
+  primaryChanged(voice: VoiceData): void;
+  /** Invoked when the `variableVoice` value is changed in the UI. */
+  variableVoiceChanged(newValue: boolean): void;
+
+  [x: string]: unknown;
+}
 
 export function buildGoogleTtsEffectType(
   modules: ScriptModules,
@@ -15,7 +47,7 @@ export function buildGoogleTtsEffectType(
 ) {
   const { eventManager, frontendCommunicator, fs, path, resourceTokenManager } = modules;
 
-  const googleTtsEffectType: Firebot.EffectType<EffectModel> = {
+  const googleTtsEffectType: EffectType<EffectModel, never, SynthesisResult> = {
     definition: {
       id: "heyaapl:google-cloud-tts",
       name: "Google Cloud Text-to-Speech",
@@ -60,11 +92,11 @@ export function buildGoogleTtsEffectType(
           <firebot-checkbox label="Use Variables" model="variableVoice" on-change="variableVoiceChanged(newValue)" tooltip="Allow for using variables in voice selection." />
 
           <!-- Either one voice selection dropdown... -->
-          <ui-select ng-if="variableVoice != true" ng-model="effect.voiceName" class="mb-3" theme="bootstrap">
+          <ui-select ng-if="variableVoice != true" ng-model="effect.voiceName" class="mb-3" theme="bootstrap" on-select="primaryChanged($item)">
               <ui-select-match placeholder="Select or search for a voice…">{{$select.selected.name}}</ui-select-match>
-              <ui-select-choices repeat="voice.name as voice in voices | filter: $select.search" style="position:relative;">
+              <ui-select-choices repeat="voice.name as voice in voices | filter: $select.search" style="position: relative;">
                   <div ng-bind-html="voice.name | highlight: $select.search"></div>
-                  <small class="muted"><strong>{{voice.language}}</strong></small>
+                  <small class="muted"><strong>{{voice.language}}</strong> | <strong>{{voice.gender}}</strong></small>
               </ui-select-choices>
           </ui-select>
 
@@ -73,12 +105,12 @@ export function buildGoogleTtsEffectType(
               Primary Voice
               <textarea ng-model="effect.voiceName" class="form-control mt-1 mb-3" name="text" placeholder="Enter the name of the voice to be used." rows="3" cols="40" replace-variables menu-position="under"></textarea>
               Fallback Voice
-              <tooltip text="'This voice will be used when the primary voice above is not a valid voice name.'"></tooltip>
+              <tooltip text="'This voice will be used when the primary voice above does not evaluate to a valid voice name.'"></tooltip>
               <ui-select ng-model="effect.backupVoice" class="mt-1" theme="bootstrap">
                   <ui-select-match placeholder="Select or search for a fallback voice…">{{$select.selected.name}}</ui-select-match>
-                  <ui-select-choices repeat="voice.name as voice in voices | filter: $select.search" style="position:relative;">
+                  <ui-select-choices repeat="voice.name as voice in voices | filter: $select.search" style="position: relative;">
                       <div ng-bind-html="voice.name | highlight: $select.search"></div>
-                      <small class="muted"><strong>{{voice.language}}</strong></small>
+                      <small class="muted"><strong>{{voice.language}}</strong> | <strong>{{voice.gender}}</strong></small>
                   </ui-select-choices>
               </ui-select>
           </div>
@@ -91,22 +123,25 @@ export function buildGoogleTtsEffectType(
               Voices List
           </a>
       </eos-container>
-      <!--
-      <eos-container header="Gender" pad-top="true">
-            <dropdown-select options="{ MALE: 'Male', FEMALE: 'Female'}" selected="effect.voiceGender"></dropdown-select>
-      </eos-container>
-      -->
-      <eos-container header="Pitch &amp; Speed" pad-top="true">
-          <div>Pitch</div>
-          <rzslider rz-slider-model="effect.pitch" rz-slider-options="{floor: -20, ceil: 20, hideLimitLabels: true, showSelectionBar: true, step: 0.5, precision: 1}"></rzslider>
+
+      <eos-container header="Pitch &amp; Speed" pad-top="true" ng-if="chirpVoice != true">
+          <div>
+            <p>Pitch</p>
+            <rzslider rz-slider-model="effect.pitch" rz-slider-options="{floor: -20, ceil: 20, hideLimitLabels: true, showSelectionBar: true, step: 0.01, precision: 2}"></rzslider>
+          </div>
+
           <div>Speed</div>
-          <rzslider rz-slider-model="effect.speakingRate" rz-slider-options="{floor: 0.25, ceil: 4, hideLimitLabels: true, showSelectionBar: true, step: 0.05, precision: 2}"></rzslider>
+          <rzslider rz-slider-model="effect.speakingRate" rz-slider-options="{floor: 0.25, ceil: 4, hideLimitLabels: true, showSelectionBar: true, step: 0.01, precision: 2}"></rzslider>
+
+          <div class="effect-info alert alert-info" ng-if="variableVoice == true">
+            Chirp voice models <strong>do not</strong> support speaking rate nor pitch adjustment, and <em>will</em> ignore these settings.
+          </div>
       </eos-container>
 
       <eos-container header="Volume" pad-top="true">
           <div class="volume-slider-wrapper">
               <i class="fal fa-volume-down volume-low"></i>
-              <rzslider rz-slider-model="effect.volume" rz-slider-options="{floor: 1, ceil: 10, hideLimitLabels: true, showSelectionBar: true}"></rzslider>
+              <rzslider rz-slider-model="effect.volume" rz-slider-options="{floor: 0.01, ceil: 10, hideLimitLabels: true, showSelectionBar: true, step: 0.01, precision: 2}"></rzslider>
               <i class="fal fa-volume-up volume-high"></i>
           </div>
       </eos-container>
@@ -116,7 +151,7 @@ export function buildGoogleTtsEffectType(
       </eos-container>
 
       <eos-audio-output-device effect="effect" pad-top="false"></eos-audio-output-device>
-      <eos-overlay-instance ng-if="effect.audioOutputDevice && effect.audioOutputDevice.deviceId === 'overlay'" effect="effect" pad-top="true"></eos-overlay-instance>
+      <eos-overlay-instance ng-if="effect.audioOutputDevice &amp;&amp; effect.audioOutputDevice.deviceId === 'overlay'" effect="effect" pad-top="true"></eos-overlay-instance>
 
       <eos-container header="Error Handling" pad-top="true">
           <firebot-checkbox label="Stop Effect List On Error" model="wantsStop" on-change="stopChanged(newValue)"
@@ -127,8 +162,13 @@ export function buildGoogleTtsEffectType(
           />
       </eos-container>
     `,
-    optionsController: ($scope, $rootScope: any, backendCommunicator: any) => {
-      $scope.bubbleChanged = (newValue: boolean) => {
+    getDefaultLabel: (effect) => {
+      return `${effect.backupVoice != null ? "Variable voice" : effect.voiceName}: "${effect.text}"`;
+    },
+    optionsController: ($scope: EffectScope, $rootScope: any, backendCommunicator: any) => {
+      $scope.bubbleChanged = function(newValue: boolean): void {
+        $scope.wantsBubbleStop = newValue;
+
         if (newValue) {
           // add bubble
           if ($scope.effect.stopOnError === "stop") {
@@ -145,10 +185,9 @@ export function buildGoogleTtsEffectType(
           }
         }
       };
-      $scope.openLink = (uri: string) => {
-        $rootScope.openLinkExternally(uri);
-      };
-      $scope.stopChanged = (newValue: boolean) => {
+      $scope.stopChanged = function(newValue: boolean): void {
+        $scope.wantsStop = newValue;
+
         if (newValue) {
           // add stop
           if ($scope.effect.stopOnError === "bubble") {
@@ -165,28 +204,67 @@ export function buildGoogleTtsEffectType(
           }
         }
       };
-      $scope.variableVoiceChanged = (newValue: boolean) => {
-        if (newValue) {
-          $scope.effect.backupVoice = $scope.effect.voiceName;
+      $scope.openLink = function(uri: string): void {
+        $rootScope.openLinkExternally(uri);
+      };
+      $scope.primaryChanged = function(voice: VoiceData): void {
+        $scope.effect.voiceName = voice?.name ?? "en-US-Wavenet-A";
+
+        if ($scope.effect.voiceName.toLowerCase().includes("chirp")) {
+          $scope.chirpVoice = true;
+          $scope.effect.pitch = undefined;
+          $scope.effect.speakingRate = undefined;
         } else {
-          $scope.effect.voiceName = $scope.effect.backupVoice;
+          $scope.chirpVoice = false;
+        }
+      };
+      $scope.variableVoiceChanged = function(newValue: boolean): void {
+        $scope.variableVoice = newValue;
+
+        if (newValue) {
+          $scope.chirpVoice = false;
+          $scope.effect.backupVoice = $scope.effect.voiceName;
+          if (Number.isNaN($scope.effect.pitch)) {
+            $scope.effect.pitch = 0;
+          }
+          if (Number.isNaN($scope.effect.speakingRate)) {
+            $scope.effect.speakingRate = 1;
+          }
+        } else {
           $scope.effect.backupVoice = undefined;
+          $scope.effect.voiceName = $scope.effect.backupVoice;
+          $scope.chirpVoice = $scope.effect.voiceName?.toLowerCase().includes("chirp") ?? false;
         }
       };
 
       $scope.voices = backendCommunicator.fireEventSync("getGoogleTtsVoices") ?? [];
 
-      if ($scope.effect.voiceName == null) {
+      if ($scope.effect.voiceName == null || $scope.effect.voiceName.length < 3) {
         $scope.effect.voiceName = "en-US-Wavenet-A"; // Historical default
       }
-      if ($scope.effect.volume == null) {
+
+      if ($scope.effect.volume == null || Number.isNaN($scope.effect.volume)) {
+        $scope.effect.volume = 7.00;
+      } else if ($scope.effect.volume < 0.01) {
+        $scope.effect.volume = 0.01;
+      } else if ($scope.effect.volume > 10) {
         $scope.effect.volume = 10;
       }
-      if ($scope.effect.pitch == null) {
+
+      if ($scope.effect.pitch == null || Number.isNaN($scope.effect.pitch)) {
         $scope.effect.pitch = 0;
+      } else if ($scope.effect.pitch < -20) {
+        $scope.effect.pitch = -20;
+      } else if ($scope.effect.pitch > 20) {
+        $scope.effect.pitch = 20;
       }
-      if ($scope.effect.speakingRate == null) {
+
+      if ($scope.effect.speakingRate == null || Number.isNaN($scope.effect.speakingRate)) {
         $scope.effect.speakingRate = 1;
+      } else if ($scope.effect.speakingRate < 0.25) {
+        $scope.effect.speakingRate = 0.25;
+      } else if ($scope.effect.speakingRate > 4) {
+        $scope.effect.speakingRate = 4;
       }
       // `(undefined | null | true)` => `true` for sync playback mode; `false` for async playback
       $scope.effect.waitComplete = ($scope.effect.waitComplete !== false);
@@ -194,6 +272,7 @@ export function buildGoogleTtsEffectType(
       $scope.variableVoice = ($scope.effect.backupVoice != null);
       $scope.wantsBubbleStop = ($scope.effect.stopOnError && $scope.effect.stopOnError.includes("bubble"));
       $scope.wantsStop = ($scope.effect.stopOnError && $scope.effect.stopOnError.includes("stop"));
+      $scope.chirpVoice = $scope.effect.backupVoice != null && $scope.effect.voiceName?.toLowerCase().includes("chirp");
     },
     optionsValidator: (effect) => {
       const errors = [];
@@ -237,7 +316,7 @@ export function buildGoogleTtsEffectType(
             ttsSucceeded: success,
             ttsVoiceName: effect.voiceName
           },
-          success: success
+          success: true
         };
       };
       const getVoice = (voiceName: string, fallbackVoice?: string): string | null => {
@@ -284,16 +363,20 @@ export function buildGoogleTtsEffectType(
           fs.mkdirSync(tmpDir);
         }
       } catch (err) {
-        logger.error(`Failed to create Google TTS temporary folder at ${tmpDir}:`, err.message);
+        logger.error(`Failed to create Google TTS temporary folder at ${tmpDir}: ${err.message}`, err);
         return effectResult(false);
       }
 
       effect.voiceName = getVoice(effect.voiceName, effect.backupVoice);
       if (!effect.voiceName) {
+        logger.error("Google Cloud TTS effect: voiceName is null");
         return effectResult(false);
+      } else if (effect.voiceName.toLowerCase().includes("chirp")) {
+        effect.pitch = undefined;
+        effect.speakingRate = undefined;
       }
 
-      let audioContent: string;
+      let audioContent: string = null;
       // synthesize audio via google tts
       try {
         audioContent = await getTTSAudioContent(effect, getApiKey());
@@ -341,8 +424,9 @@ export function buildGoogleTtsEffectType(
         }
         soundData.resourceToken = resourceTokenManager.storeResourcePath(filePath, soundDuration);
       }
+
       frontendCommunicator.send("playsound", soundData);
-      logger.debug("Sent Google Cloud TTS audio to playsound");
+      logger.debug(`Sent Google Cloud TTS audio to playsound (${soundData.maxSoundLength} seconds)`);
 
       // return early when desired to start the next effect in the list
       if (effect.waitComplete === false) {

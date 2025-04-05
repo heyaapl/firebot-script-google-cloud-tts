@@ -1,5 +1,6 @@
 import { Firebot } from "@crowbartools/firebot-custom-scripts-types";
 import { registerGoogleTtsEvents } from "./events";
+import { ScriptModules } from "./firebot-extensions";
 import { buildGoogleTtsEffectType } from "./google-tts-effect";
 import { initLogger } from "./logger";
 import { setTmpDir } from "./utils";
@@ -42,7 +43,7 @@ const script: Firebot.CustomScript<Params> = {
   run: (runRequest) => {
     params = runRequest.parameters;
 
-    const { modules } = runRequest;
+    const modules = runRequest.modules as ScriptModules;
     const { effectManager, frontendCommunicator, logger, path } = modules;
 
     logger.info(params?.testMessage ?? "Google Cloud TTS plugin is starting up");

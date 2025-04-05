@@ -2,11 +2,11 @@ import { EventSource } from "@crowbartools/firebot-custom-scripts-types/types/mo
 
 const googleTtsEventSource: EventSource = {
     id: "google-cloud-tts",
-    name: "Google Cloud Text-to-Speech",
+    name: "Google Cloud TTS",
     events: [{
         id: "usage",
         name: "TTS Usage",
-        description: "Occurs when the Google Cloud Text-to-Speech effect is used.",
+        description: "Occurs when a Google Cloud Text-to-Speech effect is used.",
         manualMetadata: {
             bucket: {
                 type: "enum",
@@ -15,11 +15,11 @@ const googleTtsEventSource: EventSource = {
                     Wavenet: "WaveNet",
                     Neural: "Neural2",
                     Polyglot: "Polyglot",
-                    Journey: "Journey",
+                    Chirp: "Chirp 3: HD",
                     Studio: "Casual, News, or Studio",
                     Unknown: "Unknown"
                 },
-                value: "Journey"
+                value: "Chirp"
             },
             cost: 75
         }

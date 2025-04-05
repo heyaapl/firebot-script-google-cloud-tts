@@ -1,14 +1,14 @@
-import { ScriptModules } from "@crowbartools/firebot-custom-scripts-types";
-import costFilter from "./cost";
+import type { EventFilter, ScriptModules } from "../../firebot-extensions";
+import charactersUsedFilter from "./characters-used";
 import pricingTierFilter from "./pricing-tier";
 
 export function registerGoogleTtsEventFilters(eventFilterManager: ScriptModules["eventFilterManager"]) {
     const ttsEventFilters = [
-        costFilter,
+        charactersUsedFilter,
         pricingTierFilter,
     ];
 
     for (const filter of ttsEventFilters) {
-        eventFilterManager.registerFilter(filter);
+        eventFilterManager.registerFilter(filter as EventFilter);
     }
 }
