@@ -59,7 +59,7 @@ export interface VoiceData {
     gender: "Female" | "Male";
 };
 
-interface BasePlaySoundData {
+type BasePlaySoundData = {
     /** Information about which audio device to play the audio on. */
     audioOutputDevice: {
         /** The unique identifier of the audio device. */
@@ -79,13 +79,13 @@ interface BasePlaySoundData {
     /** A permission slip so that the audio file can bypass the blood-brain barrier. */
     resourceToken?: string;
 };
-interface PlaySoundFileData extends BasePlaySoundData {
+type PlaySoundFileData = BasePlaySoundData & {
     /** `false` when the sound data is a local file. */
     isUrl: false;
     /** A path to the sound file to be played. */
     filepath: string;
 };
-interface PlaySoundUrlData extends BasePlaySoundData {
+type PlaySoundUrlData = BasePlaySoundData & {
     /** `true` when the sound data represents an URL. */
     isUrl: true;
     /** An URL pointing to the sound to be played. */

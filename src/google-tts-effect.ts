@@ -45,7 +45,7 @@ export function buildGoogleTtsEffectType(
   settings: FirebotSettings,
   getApiKey: () => string
 ) {
-  const { eventManager, frontendCommunicator, fs, path, resourceTokenManager } = modules;
+  const { eventManager, frontendCommunicator, fs, httpServer, path, resourceTokenManager } = modules;
 
   const googleTtsEffectType: EffectType<EffectModel, never, SynthesisResult> = {
     definition: {
@@ -272,7 +272,7 @@ export function buildGoogleTtsEffectType(
       $scope.variableVoice = ($scope.effect.backupVoice != null);
       $scope.wantsBubbleStop = ($scope.effect.stopOnError && $scope.effect.stopOnError.includes("bubble"));
       $scope.wantsStop = ($scope.effect.stopOnError && $scope.effect.stopOnError.includes("stop"));
-      $scope.chirpVoice = $scope.effect.backupVoice != null && $scope.effect.voiceName?.toLowerCase().includes("chirp");
+      $scope.chirpVoice = (!$scope.variableVoice && $scope.effect.voiceName?.toLowerCase().includes("chirp"));
     },
     optionsValidator: (effect) => {
       const errors = [];
@@ -416,17 +416,20 @@ export function buildGoogleTtsEffectType(
         format: "mp3",
         isUrl: false,
         maxSoundLength: soundDuration,
-        volume: effect.volume || 7
+        volume: effect.volume
       };
       if (soundData.audioOutputDevice.deviceId === "overlay") {
         if (settings.useOverlayInstances() && effect.overlayInstance && settings.getOverlayInstances().includes(effect.overlayInstance)) {
           soundData.overlayInstance = effect.overlayInstance;
         }
         soundData.resourceToken = resourceTokenManager.storeResourcePath(filePath, soundDuration);
+        httpServer.sendToOverlay("sound", soundData);
+        logger.debug(`Sent Google Cloud TTS audio to overlay (${soundData.maxSoundLength} seconds)`);
+      } else {
+        soundData.filepath = soundData.filepath.replaceAll("%", "%25").replaceAll("#", "%23");
+        frontendCommunicator.send("playsound", soundData);
+        logger.debug(`Sent Google Cloud TTS audio to playsound (${soundData.maxSoundLength} seconds)`);
       }
-
-      frontendCommunicator.send("playsound", soundData);
-      logger.debug(`Sent Google Cloud TTS audio to playsound (${soundData.maxSoundLength} seconds)`);
 
       // return early when desired to start the next effect in the list
       if (effect.waitComplete === false) {
