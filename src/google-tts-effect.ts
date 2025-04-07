@@ -360,7 +360,7 @@ export function buildGoogleTtsEffectType(
       // Create the temporary folder first
       try {
         if (!fs.existsSync(tmpDir)) {
-          fs.mkdirSync(tmpDir);
+          fs.mkdirSync(tmpDir, { recursive: true });
         }
       } catch (err) {
         logger.error(`Failed to create Google TTS temporary folder at ${tmpDir}: ${err.message}`, err);
