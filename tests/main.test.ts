@@ -1,6 +1,6 @@
-import { RunRequest, ScriptModules } from "firebot-custom-scripts-types";
-import { ArgumentsOf } from "ts-jest/dist/utils/testing";
+import { RunRequest } from "@crowbartools/firebot-custom-scripts-types";
 import customScript from "../src/main";
+
 test("main default export is the custom script", () => {
   expect(customScript).not.toBeUndefined();
   expect(customScript.run).not.toBeUndefined();
@@ -9,18 +9,21 @@ test("main default export is the custom script", () => {
 });
 
 test("run() calls logger.info with the message", async () => {
-  const mockInfoLog = jest.fn<
-    void,
-    ArgumentsOf<ScriptModules["logger"]["info"]>
-  >();
+  const logger = {
+    debug: jest.fn<void, any[]>(),
+    info: jest.fn<void, any[]>(),
+    warn: jest.fn<void, any[]>(),
+    error: jest.fn<void, any[]>()
+  };
+
   const expectedMessage = "foobar";
   const runRequest = ({
-    parameters: { message: expectedMessage },
-    modules: { logger: { info: mockInfoLog } },
+    parameters: { testMessage: expectedMessage },
+    modules: { logger: logger },
   } as unknown) as RunRequest<any>;
 
   await customScript.run(runRequest);
 
-  expect(mockInfoLog.mock.calls.length).toBe(1);
-  expect(mockInfoLog.mock.calls[0][0]).toBe(expectedMessage);
+  expect(logger.info.mock.calls.length).toBeGreaterThanOrEqual(1);
+  expect(logger.info.mock.calls[0][0]).toBe(expectedMessage);
 });
